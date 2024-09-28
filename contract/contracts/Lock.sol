@@ -15,6 +15,10 @@ contract Lock {
     }
     mapping(string=>Position[]) token_hash_positions;
 
+    function Get_Positions(string memory token_hash) public returns (Position[] memory) {
+        return token_hash_positions[token_hash];
+    }
+
     struct Token {
         address owner;
         string token_hash; // sha256 hash
@@ -106,11 +110,11 @@ contract Lock {
         return index;
     }
 
-    function find_holding(string memory token_hash) private view returns (uint, bool) {
+    function find_holding(string memory token_hash, address person) private view returns (uint, bool) {
         bool found_holding;
         uint holding_index;
-        for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
-            if (keccak256(abi.encodePacked(user_holdings[msg.sender][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
+        for (uint i = 0; i < user_holdings[person].length; i++) {
+            if (keccak256(abi.encodePacked(user_holdings[person][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
                 found_holding=true;
                 holding_index=i;
             }
@@ -118,22 +122,26 @@ contract Lock {
         return (holding_index, found_holding);
     }
 
-    function Buy_Token(string memory token_hash) payable public {
-        uint256 amount_sent_native=(msg.value*99)/100;
+    function Buy_Private(address person, uint256 amount_sent_native, string memory token_hash) private {
         Token memory token;
         uint index=find_token(token_hash);
         token=tokens[index];
         uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity));
         tokens[index].token_state.liquidity+=amount_sent_native;
-        tokens[index].token_state.total_tokens+=togive;
+        tokens[index].token_state.total_tokens-=togive;
         bool found_holding; 
         uint holding_index;
-        (holding_index, found_holding)=find_holding(token_hash);
+        (holding_index, found_holding)=find_holding(token_hash, person);
         if (found_holding) {
-            user_holdings[msg.sender][holding_index].amount+=togive;
+            user_holdings[person][holding_index].amount+=togive;
         } else {
-            user_holdings[msg.sender].push(Holding(msg.sender, token_hash, togive));
+            user_holdings[person].push(Holding(person, token_hash, togive));
         }
+    }
+
+    function Buy_Token(string memory token_hash) payable public {
+        uint256 amount_sent_native=(msg.value*99)/100;
+        Buy_Private(msg.sender, amount_sent_native, token_hash);
     }
 
     function Sell_Token(string memory token_hash, uint256 amount, address payable caller_address) public {
@@ -142,7 +150,7 @@ contract Lock {
         token=tokens[index];
         bool found_holding;
         uint holding_index;
-        (holding_index, found_holding)=find_holding(token_hash);
+        (holding_index, found_holding)=find_holding(token_hash, msg.sender);
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
         uint256 togive_native=((token.token_state.liquidity*amount)/token.token_state.total_tokens);
@@ -178,7 +186,7 @@ contract Lock {
         token=tokens[index];
         bool found_holding;
         uint holding_index;
-        (holding_index, found_holding)=find_holding(token_hash);
+        (holding_index, found_holding)=find_holding(token_hash, msg.sender);
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot use more of a token for opening positions than you own");
         Token_State memory token_state;
@@ -194,7 +202,7 @@ contract Lock {
         token=tokens[index];
         bool found_holding;
         uint holding_index;
-        (holding_index, found_holding)=find_holding(token_hash);
+        (holding_index, found_holding)=find_holding(token_hash, msg.sender);
         require(found_holding, "you must hold the token");
         bool found_position;
         uint position_index;
@@ -216,7 +224,7 @@ contract Lock {
             } else {
                 percentage_changed=int256((((final_price-initial_price)*(10**9))/initial_price)*-1);
             }
-            int256 to_give=(int256(position.leverage)*percentage_changed*int256(position.amount))/(10**9);
+            int256 to_give=(int256(position.leverage)*percentage_changed*int256(position.amount))/(10**11);
             int256 final_amount=int256(position.amount)+to_give+int256(user_holdings[msg.sender][holding_index].amount);
             if (final_amount<0) {
                 final_amount=0;
@@ -233,5 +241,33 @@ contract Lock {
         token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1]=token_hash_positions[token.token_hash][position_index];
         token_hash_positions[token.token_hash][position_index]=temp_var;
         token_hash_positions[token.token_hash].pop();
+    }
+
+    function Send_Token(string memory token_hash, uint256 amount, address other_address) public {
+        Token memory token;
+        uint index=find_token(token_hash);
+        token=tokens[index];
+        bool found_holding; 
+        uint holding_index;
+        (holding_index, found_holding)=find_holding(token_hash, msg.sender);
+        require(found_holding, "you must hold to send");
+        require(user_holdings[msg.sender][holding_index].amount>=amount, "cannot use more of a token than you have");
+        bool found2_holding; 
+        uint holding2_index;
+        (holding2_index, found2_holding)=find_holding(token_hash, other_address);
+        user_holdings[msg.sender][holding_index].amount-=amount;
+        if (found2_holding) {
+            user_holdings[other_address][holding_index].amount+=amount;
+        } else {
+            user_holdings[other_address].push(Holding(other_address, token_hash, amount));
+        }
+    }
+
+    function Swap_Tokens(string memory token1_hash, string memory token2_hash, uint256 amount, address payable your_address) public {
+        require(your_address==msg.sender);
+        uint256 initial_balance=msg.sender.balance;
+        Sell_Token(token1_hash, amount, your_address);
+        uint256 net_balance=msg.sender.balance-initial_balance;
+        Buy_Private(your_address, net_balance, token2_hash);
     }
 }

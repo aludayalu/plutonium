@@ -1,7 +1,9 @@
-from flask import request, redirect
-from monster import render, tokeniser, parser, Flask
-import sys, json
+from flask import request, redirect, Response
+from monster import render, tokeniser, parser, Flask, request
+import sys, json, requests
 import secrets_parser
+
+main_api_url="http://10.43.0.96:7777"
 
 secrets=secrets_parser.parse("variables.txt")
 
@@ -35,6 +37,43 @@ app = Flask(__name__)
 
 @app.get("/")
 def home():
+    if "private_key" not in request.cookies:
+        return redirect("https://t.me/PlutoniumWalletBot")
+    response=requests.get(main_api_url+"/get_account_info?private_key="+request.cookies["private_key"]).json()
+    if "error" in response:
+        return redirect("https://t.me/PlutoniumWalletBot")
+    navbar = render("navbar", locals()|globals())
+    chart = render("chart", locals()|globals())
     return render("index", locals()|globals())
 
-app.run(host="127.0.0.1", port=int(sys.argv[1]))
+@app.get("/register")
+def registration():
+    response=requests.get(main_api_url+"/registration_token_info?token="+request.args["token"]).json()
+    if response:
+        
+        navbar = render("navbar", locals()|globals())
+        return render("registration", locals()|globals())
+    else:
+        return redirect("/")
+
+@app.get("/submit_registration")
+def submit_registration():
+    response=requests.get(main_api_url+"/submit_registration?token="+request.args["token"]+"&username="+request.args["username"]).json()
+    resp=redirect("/")
+    resp.set_cookie("private_key", response["private_key"])
+    resp.set_cookie("public_key", response["public_key"])
+    return resp
+    
+@app.get("/swap")
+def swap():
+    
+    navbar = render("navbar", locals()|globals())
+    return render("swap", locals()|globals())
+
+@app.get("/tokens")
+def tokens():
+    
+    navbar = render("navbar", locals()|globals())
+    return render("tokens", locals()|globals())
+
+app.run(host="0.0.0.0", port=int(sys.argv[1]))

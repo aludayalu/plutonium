@@ -1,0 +1,119 @@
+<head>
+    <title>Swap | Plutonium</title>
+    <link rel="stylesheet" href="main.css"></link>
+    {tailwind}
+    {daisyui}
+</head>
+
+<script>
+    var ticker = ["$ETH", "$LTZ", "$ABC", "$GUD"]
+
+    var fromDropdown = Signal("fromDropdown", "close")
+    var fromDropdownValue = Signal("fromDropdownValue", 0)
+    DerivedFrom("fromCurrentTicker", () => {
+        return ticker[fromDropdownValue.Value()]
+    }, ["fromDropdownValue"])
+    function fromToggleDropdown(){
+        fromDropdown.setValue(fromDropdown.Value() === "close" ? "open" : "close")
+    }
+
+    var toDropdown = Signal("toDropdown", "close")
+    var toDropdownValue = Signal("toDropdownValue", 0)
+    DerivedFrom("toCurrentTicker", () => {
+        return ticker[toDropdownValue.Value()]
+    }, ["toDropdownValue"])
+    function toToggleDropdown(){
+        toDropdown.setValue(toDropdown.Value() === "close" ? "open" : "close")
+    }
+
+    function switchTickers(){
+        temp = fromDropdownValue.Value()
+        fromDropdownValue.setValue(toDropdownValue.Value())
+        toDropdownValue.setValue(temp)
+    }
+</script>
+
+<body data-theme="forest" class="max-h-screen">
+
+    {navbar}
+    <div class="w-full h-full pl-[66px] pt-[10px]">
+
+        <div class="flex justify-between h-[34px] mb-2 mx-[15px]">
+            <div class="flex gap-2 items-center border border-white/10 px-1.5 py-1.5 rounded-lg w-[500px]">
+                <svg width="17" height="17" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8.3" cy="8.3" r="6.8" stroke="#8c8888" stroke-width="1.13333"></circle>
+                    <path d="M17.8493 18.6507C18.0706 18.872 18.4294 18.872 18.6507 18.6507C18.872 18.4294 18.872 18.0706 18.6507 17.8493L17.8493 18.6507ZM13.6507 12.8493L13.25 12.4486L12.4486 13.25L12.8493 13.6507L13.6507 12.8493ZM18.6507 17.8493L13.6507 12.8493L12.8493 13.6507L17.8493 18.6507L18.6507 17.8493Z" fill="#8c8888"></path>
+                </svg>                
+                <input type="text" placeholder="Search" class="w-full outline-none placeholder:text-white/50 text-sm"></input>
+            </div>
+
+            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">@AtharvVarshney7</button>
+        </div>
+
+        <div class="w-full h-[calc(100vh-64px)] flex justify-center items-center">
+            <div class="flex flex-col bg-white/[0.04] border border-white/[0.15] w-[450px] p-5 rounded-xl gap-5">
+                <div class="flex justify-center items-center gap-3 mb-7 relative">
+                    <img src="logo.svg" class="h-14"></img>
+                    <h1 class="orbitron text-3xl">Plutonium</h1>
+                    <p class="italic text-sm text-[#0A84FF] absolute top-[76%] left-[273px] orbitron">Swap</p>
+                </div>
+
+                <div class="flex rounded-lg border-2 border-white/[0.05] relative">
+                    <button onclick="fromToggleDropdown()" class="flex gap-3 justify-between items-center py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6] focus:outline-none">
+                        <p>{fromCurrentTicker}</p>
+                        <svg class="w-2.5 h-2.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
+                        </svg>
+                    </button>
+                    
+                    <if "fromDropdown.Value() == 'open'" dep:fromDropdown>
+                        <div class="z-10 absolute left-0 top-10 bg-white rounded-lg shadow w-32">
+                            <div class="py-2 flex flex-col">
+                                <p onclick="fromDropdownValue.setValue(0);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[0]}</p>
+                                <p onclick="fromDropdownValue.setValue(1);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[1]}</p>
+                                <p onclick="fromDropdownValue.setValue(2);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[2]}</p>
+                                <p onclick="fromDropdownValue.setValue(3);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[3]}</p>
+                            </div>
+                        </div>
+                    </if>
+
+                    <input id="fromAmount" type="number" class="outline-none border-none pl-2 w-full" placeholder="0"></input>
+
+                    <p class="absolute right-3 top-1.5">FROM</p>
+                </div>
+
+                <div class="flex justify-center" onclick="switchTickers()">
+                    <svg width="50" height="50" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" class="cursor-pointer px-2 py-1 hover:bg-white/[0.05] rounded-lg">
+                        <path d="M6.3998 1L5.95786 0.558058L6.3998 0.116116L6.84175 0.558058L6.3998 1ZM7.02481 14.5C7.02481 14.8452 6.74498 15.125 6.39981 15.125C6.05463 15.125 5.77481 14.8452 5.77481 14.5L7.02481 14.5ZM2.35786 4.15806L5.95786 0.558058L6.84175 1.44194L3.24175 5.04194L2.35786 4.15806ZM6.84175 0.558058L10.4417 4.15806L9.55786 5.04194L5.95786 1.44194L6.84175 0.558058ZM7.0248 1L7.02481 14.5L5.77481 14.5L5.7748 1L7.0248 1Z" fill="rgba(255, 255, 255, 0.66)"></path>
+                        <path d="M13.6 19L13.1581 19.4419L13.6 19.8839L14.0419 19.4419L13.6 19ZM14.225 5.5C14.225 5.15482 13.9452 4.875 13.6 4.875C13.2548 4.875 12.975 5.15482 12.975 5.5L14.225 5.5ZM9.55806 15.8419L13.1581 19.4419L14.0419 18.5581L10.4419 14.9581L9.55806 15.8419ZM14.0419 19.4419L17.6419 15.8419L16.7581 14.9581L13.1581 18.5581L14.0419 19.4419ZM14.225 19L14.225 5.5L12.975 5.5L12.975 19L14.225 19Z" fill="rgba(255, 255, 255, 0.66)"></path>
+                    </svg>                        
+                </div>
+
+                <div class="flex rounded-lg border-2 border-white/[0.05] relative">
+                    <button onclick="toToggleDropdown()" class="flex gap-3 justify-between items-center py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6] focus:outline-none">
+                        <p>{toCurrentTicker}</p>
+                        <svg class="w-2.5 h-2.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
+                        </svg>
+                    </button>
+                    
+                    <if "toDropdown.Value() == 'open'" dep:toDropdown>
+                        <div class="z-10 absolute left-0 top-10 bg-white rounded-lg shadow w-32">
+                            <div class="py-2 flex flex-col">
+                                <p onclick="toDropdownValue.setValue(0);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[0]}</p>
+                                <p onclick="toDropdownValue.setValue(1);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[1]}</p>
+                                <p onclick="toDropdownValue.setValue(2);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[2]}</p>
+                                <p onclick="toDropdownValue.setValue(3);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[3]}</p>
+                            </div>
+                        </div>
+                    </if>
+                    <input id="toAmount" type="number" class="outline-none border-none pl-2 w-full" placeholder="0"></input>
+                    <p class="absolute right-3 top-1.5">TO</p>
+                </div>
+
+                <button class="border border-[#0A84FF] bg-[#0A84FF]/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition">Swap Tokens</button>
+            </div>
+        </div>
+
+    </div>
+</body>

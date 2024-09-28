@@ -7,3 +7,19 @@
 .vertical {
     text-align: center;
 }
+
+@font-face {
+    font-family: 'Orbitron';
+    font-style: normal;
+    src: url(Orbitron-font.ttf);
+}
+
+.orbitron {
+    font-family: 'Orbitron';
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

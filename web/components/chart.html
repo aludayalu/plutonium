@@ -1,0 +1,253 @@
+<script src="index.js"></script>
+<script src="xy.js"></script>
+<script src="stock.js"></script>
+<script src="Animated.js"></script>
+<script src="Dark.js"></script>
+
+<script>
+    am5.ready(function() {
+        var root = am5.Root.new("chartdiv");
+        root.setThemes([
+            am5themes_Animated.new(root),
+            am5themes_Dark.new(root)
+        ]);
+        var stockChart = root.container.children.push(
+            am5stock.StockChart.new(root, {
+                paddingRight: 0
+            })
+        );
+
+        root.numberFormatter.set("numberFormat", "#,###.00");
+
+        var mainPanel = stockChart.panels.push(
+            am5stock.StockPanel.new(root, {
+                wheelY: "zoomX",
+                panX: true,
+                panY: true
+            })
+        );
+        var valueAxis = mainPanel.yAxes.push(
+            am5xy.ValueAxis.new(root, {
+                renderer: am5xy.AxisRendererY.new(root, {
+                    pan: "zoom"
+                }),
+                extraMin: 0.1,
+                tooltip: am5.Tooltip.new(root, {}),
+                numberFormat: "#,###.00",
+                extraTooltipPrecision: 2
+            })
+        );
+
+        var dateAxis = mainPanel.xAxes.push(
+            am5xy.GaplessDateAxis.new(root, {
+                    extraMax:0.1,
+                    baseInterval: {
+                    timeUnit: "minute",
+                    count: 1
+                },
+                renderer: am5xy.AxisRendererX.new(root, {
+                    pan: "zoom",
+                    minorGridEnabled: true
+                }),
+                tooltip: am5.Tooltip.new(root, {})
+            })
+        );
+
+        var currentValueDataItem = valueAxis.createAxisRange(valueAxis.makeDataItem({ value: 0 }));
+        var currentLabel = currentValueDataItem.get("label");
+        if (currentLabel) {
+            currentLabel.setAll({
+                fill: am5.color(0xffffff),
+                background: am5.Rectangle.new(root, { fill: am5.color(0x000000) })
+            })
+        }
+
+        var currentGrid = currentValueDataItem.get("grid");
+        if (currentGrid) {
+            currentGrid.setAll({ strokeOpacity: 0.5, strokeDasharray: [2, 5] });
+        }
+
+        var valueSeries = mainPanel.series.push(
+            am5xy.CandlestickSeries.new(root, {
+                name: "AMCH",
+                clustered: false,
+                valueXField: "Date",
+                valueYField: "Close",
+                highValueYField: "High",
+                lowValueYField: "Low",
+                openValueYField: "Open",
+                calculateAggregates: true,
+                xAxis: dateAxis,
+                yAxis: valueAxis,
+                legendValueText:
+                "open: [bold]{openValueY}[/] high: [bold]{highValueY}[/] low: [bold]{lowValueY}[/] close: [bold]{valueY}[/]",
+                legendRangeValueText: ""
+            })
+        );
+        stockChart.set("stockSeries", valueSeries);
+            var valueLegend = mainPanel.plotContainer.children.push(
+            am5stock.StockLegend.new(root, {
+                stockChart: stockChart
+            })
+        );
+
+        mainPanel.set(
+            "cursor",
+            am5xy.XYCursor.new(root, {
+                yAxis: valueAxis,
+                xAxis: dateAxis,
+                snapToSeries: [valueSeries],
+                snapToSeriesBy: "y!"
+            })
+        );
+        var scrollbar = mainPanel.set(
+            "scrollbarX",
+            am5xy.XYChartScrollbar.new(root, {
+                orientation: "horizontal",
+                height: 50
+            })
+        );
+        stockChart.toolsContainer.children.push(scrollbar);
+
+        var sbDateAxis = scrollbar.chart.xAxes.push(
+            am5xy.GaplessDateAxis.new(root, {
+                extraMax:0.1,
+                baseInterval: {
+                timeUnit: "minute",
+                count: 1
+                },
+                renderer: am5xy.AxisRendererX.new(root, {
+                minorGridEnabled: true
+                })
+            })
+        );
+
+        var sbValueAxis = scrollbar.chart.yAxes.push(
+            am5xy.ValueAxis.new(root, {
+                renderer: am5xy.AxisRendererY.new(root, {})
+            })
+        );
+
+        var sbSeries = scrollbar.chart.series.push(
+            am5xy.LineSeries.new(root, {
+                valueYField: "Close",
+                valueXField: "Date",
+                xAxis: sbDateAxis,
+                yAxis: sbValueAxis
+            })
+        );
+
+        sbSeries.fills.template.setAll({
+            visible: true,
+            fillOpacity: 0.3
+        });
+
+        var firstDate = new Date();
+        var lastDate;
+        var value = 1200;
+
+        function generateChartData() {
+            var chartData = [];
+
+            for (var i = 0; i < 500; i++) {
+                var newDate = new Date(firstDate);
+                newDate.setMinutes(newDate.getMinutes() - i);
+
+                value += Math.round((Math.random() < 0.49 ? 1 : -1) * Math.random() * 10);
+
+                var open = value + Math.round(Math.random() * 16 - 8);
+                var low = Math.min(value, open) - Math.round(Math.random() * 5);
+                var high = Math.max(value, open) + Math.round(Math.random() * 5);
+
+                chartData.push({
+                    Date: newDate.getTime(),
+                    Close: value,
+                    Open: open,
+                    Low: low,
+                    High: high
+                });
+
+                lastDate = newDate;
+            }
+            return chartData.reverse();
+        }
+
+        var data = generateChartData();
+
+        valueSeries.data.setAll(data);
+        sbSeries.data.setAll(data);
+
+        var previousDate;
+
+        function OnPriceChange(newPrice, newDate) {
+            var valueSeries = stockChart.get("stockSeries");
+            var date = newDate;
+            var lastDataObject = valueSeries.data.getIndex(valueSeries.data.length - 1);
+            if (lastDataObject) {
+                var previousDate = lastDataObject.Date;
+
+                value = newPrice;
+
+                var high = lastDataObject.High;
+                var low = lastDataObject.Low;
+                var open = lastDataObject.Open;
+
+                if (am5.time.checkChange(date, previousDate, "minute")) {
+                    open = value;
+                    high = value;
+                    low = value;
+
+                    var dObj1 = {
+                        Date: date,
+                        Close: value,
+                        Open: value,
+                        Low: value,
+                        High: value
+                    };
+
+                    valueSeries.data.push(dObj1);
+                    sbSeries.data.push(dObj1);
+                    previousDate = date;
+                } else {
+                    if (value > high) {
+                        high = value;
+                    }
+
+                    if (value < low) {
+                        low = value;
+                    }
+
+                    var dObj2 = {
+                        Date: date,
+                        Close: value,
+                        Open: open,
+                        Low: low,
+                        High: high
+                    };
+
+                    valueSeries.data.setIndex(valueSeries.data.length - 1, dObj2);
+                    sbSeries.data.setIndex(sbSeries.data.length - 1, dObj2);
+                }
+                if (currentLabel) {
+                    currentValueDataItem.animate({ key: "value", to: value, duration: 500, easing: am5.ease.out(am5.ease.cubic) })
+                    currentLabel.set("text", stockChart.getNumberFormatter().format(value))
+                    var bg = currentLabel.get("background")
+                    if (bg) {
+                        if (value < open) {
+                            bg.set("fill", root.interfaceColors.get("negative"))
+                        }
+                        else {
+                            bg.set("fill", root.interfaceColors.get("positive"))
+                        }
+                    }
+                }
+            }
+        }
+
+        setInterval(function () {
+            OnPriceChange((Math.random())*5+1200, Date.now())
+        }, 1000);
+    });
+</script>
+
+<div id="chartdiv" class="w-full h-[350px] max-w-full"></div>

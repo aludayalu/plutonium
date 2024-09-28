@@ -71,16 +71,35 @@ contract Lock {
         return string(str);
     }
 
-    function Create_Token(string memory name, string memory icon_url, string memory description, string memory telegram, string memory x, string memory website, string memory ticker) public {
+    function Create_Token(string memory name, string memory icon_url, string memory description, string memory telegram, string memory x, string memory website, string memory ticker) public returns (string memory) {
         string memory token_hash=Hash(string(abi.encodePacked(name, icon_url, description, telegram, x, website, ticker, msg.sender, block.number, msg.sig)));
         Token_State memory token_state=Token_State(10**9, base_liquidity);
         Position[] memory positions;
         Token memory token=Token(msg.sender, token_hash, name, ticker, icon_url, description, telegram, x, website, false, token_state, positions);
         tokens.push(token);
+        return token_hash;
     }
 
     function Get_All_Tokens() public view returns (Token[] memory) {
         return tokens;
+    }
+
+    function Get_Holdings(address addr) public view returns (Holding[] memory) {
+        return user_holdings[addr];
+    }
+    
+    function Get_Token(string memory token_hash) public view returns (Token memory) {
+        Token memory token;
+        bool found_token;
+        uint index;
+        for (uint i = 0; i < tokens.length; i++) {
+            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
+                found_token=true;
+                token=tokens[i];
+                index=i;
+            }
+        }
+        return token;
     }
 
     function Buy_Token(string memory token_hash) payable public {

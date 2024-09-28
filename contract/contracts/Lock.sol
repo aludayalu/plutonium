@@ -43,6 +43,8 @@ contract Lock {
         uint256 time;
     }
 
+    event Price_Change(string token_hash, Token_State token_state, string order_executed, address person);
+
     string[] private possible_types;
     mapping(uint256=>uint256) private stake_maps_percent;
 
@@ -82,6 +84,7 @@ contract Lock {
     function Create_Token(Token_Metadata memory token_metadata) public returns (string memory) {
         string memory token_hash = Hash(string(abi.encodePacked(msg.sender, block.number, msg.sig)));
         tokens.push(Token(msg.sender, token_hash, token_metadata, false, Token_State(10**9, base_liquidity)));
+        emit Price_Change(token_hash, Token_State(10**9, base_liquidity), "create_token", msg.sender);
         return token_hash;
     }
 
@@ -142,6 +145,7 @@ contract Lock {
         } else {
             user_holdings[person].push(Holding(person, token_hash, togive));
         }
+        emit Price_Change(token_hash, tokens[index].token_state, "buy", person);
     }
 
     function Sell_Token_Private(string memory token_hash, uint256 amount) private returns (uint256) {
@@ -157,6 +161,7 @@ contract Lock {
         user_holdings[msg.sender][holding_index].amount-=amount;
         tokens[index].token_state.total_tokens+=amount;
         token.token_state.liquidity-=togive_native;
+        emit Price_Change(token_hash, tokens[index].token_state, "sell", msg.sender);
         return togive_native;
     }
 
@@ -245,6 +250,7 @@ contract Lock {
         token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1]=token_hash_positions[token.token_hash][position_index];
         token_hash_positions[token.token_hash][position_index]=temp_var;
         token_hash_positions[token.token_hash].pop();
+        emit Price_Change(token_hash, tokens[index].token_state, position.position_type, msg.sender);
     }
 
     function Send_Token(string memory token_hash, uint256 amount, address other_address) public {

@@ -13,20 +13,14 @@ contract Lock {
         string token_hash;
         uint256 amount;
     }
+    mapping(string=>Position[]) token_hash_positions;
 
     struct Token {
         address owner;
         string token_hash; // sha256 hash
-        string name;
-        string ticker;
-        string icon_url;
-        string description;
-        string telegram;
-        string x_dot_com;
-        string website_url;
+        Token_Metadata metadata;
         bool graduation;
         Token_State token_state;
-        Position[] positions;
     }
 
     struct Token_State {
@@ -71,12 +65,19 @@ contract Lock {
         return string(str);
     }
 
-    function Create_Token(string memory name, string memory icon_url, string memory description, string memory telegram, string memory x, string memory website, string memory ticker) public returns (string memory) {
-        string memory token_hash=Hash(string(abi.encodePacked(name, icon_url, description, telegram, x, website, ticker, msg.sender, block.number, msg.sig)));
-        Token_State memory token_state=Token_State(10**9, base_liquidity);
-        Position[] memory positions;
-        Token memory token=Token(msg.sender, token_hash, name, ticker, icon_url, description, telegram, x, website, false, token_state, positions);
-        tokens.push(token);
+    struct Token_Metadata {
+        string name;
+        string icon_url;
+        string description;
+        string telegram;
+        string x;
+        string website;
+        string ticker;
+    }
+
+    function Create_Token(Token_Metadata memory token_metadata) public returns (string memory) {
+        string memory token_hash = Hash(string(abi.encodePacked(msg.sender, block.number, msg.sig)));
+        tokens.push(Token(msg.sender, token_hash, token_metadata, false, Token_State(10**9, base_liquidity)));
         return token_hash;
     }
 
@@ -89,35 +90,23 @@ contract Lock {
     }
     
     function Get_Token(string memory token_hash) public view returns (Token memory) {
-        Token memory token;
-        bool found_token;
-        uint index;
-        for (uint i = 0; i < tokens.length; i++) {
-            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_token=true;
-                token=tokens[i];
-                index=i;
-            }
-        }
-        return token;
+        return tokens[find_token(token_hash)];
     }
 
-    function Buy_Token(string memory token_hash) payable public {
-        uint256 amount_sent_native=(msg.value*99)/100;
-        Token memory token;
+    function find_token(string memory token_hash) private view returns (uint) {
         bool found_token;
         uint index;
         for (uint i = 0; i < tokens.length; i++) {
             if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
                 found_token=true;
-                token=tokens[i];
                 index=i;
             }
         }
         require(found_token, "token not found");
-        uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity+amount_sent_native));
-        togive=((token.token_state.total_tokens-togive)*amount_sent_native)/(token.token_state.liquidity+amount_sent_native);
-        tokens[index].token_state.liquidity+=amount_sent_native;
+        return index;
+    }
+
+    function find_holding(string memory token_hash) private view returns (uint, bool) {
         bool found_holding;
         uint holding_index;
         for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
@@ -126,6 +115,19 @@ contract Lock {
                 holding_index=i;
             }
         }
+        return (holding_index, found_holding);
+    }
+
+    function Buy_Token(string memory token_hash) payable public {
+        uint256 amount_sent_native=(msg.value*99)/100;
+        Token memory token;
+        uint index=find_token(token_hash);
+        uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity+amount_sent_native));
+        togive=((token.token_state.total_tokens-togive)*amount_sent_native)/(token.token_state.liquidity+amount_sent_native);
+        tokens[index].token_state.liquidity+=amount_sent_native;
+        bool found_holding; 
+        uint holding_index;
+        (holding_index, found_holding)=find_holding(token_hash);
         if (found_holding) {
             user_holdings[msg.sender][holding_index].amount+=togive;
         } else {
@@ -135,24 +137,11 @@ contract Lock {
 
     function Sell_Token(string memory token_hash, uint256 amount, address payable caller_address) public {
         Token memory token;
-        bool found_token;
-        uint index;
-        for (uint i = 0; i < tokens.length; i++) {
-            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_token=true;
-                token=tokens[i];
-                index=i;
-            }
-        }
-        require(found_token, "token not found");
+        uint index=find_token(token_hash);
+        token=tokens[index];
         bool found_holding;
         uint holding_index;
-        for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
-            if (keccak256(abi.encodePacked(user_holdings[msg.sender][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_holding=true;
-                holding_index=i;
-            }
-        }
+        (holding_index, found_holding)=find_holding(token_hash);
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
         uint256 togive_native=((token.token_state.liquidity*amount)/token.token_state.total_tokens);
@@ -184,62 +173,36 @@ contract Lock {
         require(leverage<=5 && leverage>=1, "invalid leverage multiplier amount");
         require(contains_string(possible_types, order_type), "not a possible order type");
         Token memory token;
-        bool found_token;
-        uint index;
-        for (uint i = 0; i < tokens.length; i++) {
-            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_token=true;
-                token=tokens[i];
-                index=i;
-            }
-        }
-        require(found_token, "token not found");
+        uint index=find_token(token_hash);
+        token=tokens[index];
         bool found_holding;
         uint holding_index;
-        for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
-            if (keccak256(abi.encodePacked(user_holdings[msg.sender][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_holding=true;
-                holding_index=i;
-            }
-        }
+        (holding_index, found_holding)=find_holding(token_hash);
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot use more of a token for opening positions than you own");
         Token_State memory token_state;
         token_state.liquidity=token.token_state.liquidity;
         token_state.total_tokens=token.token_state.total_tokens;
         user_holdings[msg.sender][holding_index].amount-=amount;
-        tokens[index].positions.push(Position(Hash(string(abi.encodePacked(msg.sig, token_hash, amount, block.number))), order_type, amount, token_state, ttl, msg.sender, leverage, block.number));
+        token_hash_positions[tokens[index].token_hash].push(Position(Hash(string(abi.encodePacked(msg.sig, token_hash, amount, block.number))), order_type, amount, token_state, ttl, msg.sender, leverage, block.number));
     }
 
     function Close_Order(string memory order_id, string memory token_hash) public {
         Token memory token;
-        bool found_token;
-        uint index;
-        for (uint i = 0; i < tokens.length; i++) {
-            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_token=true;
-                token=tokens[i];
-                index=i;
-            }
-        }
-        require(found_token, "token not found");
+        uint index=find_token(token_hash);
+        token=tokens[index];
         bool found_holding;
         uint holding_index;
-        for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
-            if (keccak256(abi.encodePacked(user_holdings[msg.sender][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
-                found_holding=true;
-                holding_index=i;
-            }
-        }
+        (holding_index, found_holding)=find_holding(token_hash);
         require(found_holding, "you must hold the token");
         bool found_position;
         uint position_index;
         Position memory position;
-        for (uint i = 0; i < token.positions.length; i++) {
-            if (keccak256(abi.encodePacked(token.positions[i].id))==keccak256(abi.encodePacked(order_id)) && token.positions[i].owner==msg.sender) {
+        for (uint i = 0; i < token_hash_positions[token.token_hash].length; i++) {
+            if (keccak256(abi.encodePacked(token_hash_positions[token.token_hash][i].id))==keccak256(abi.encodePacked(order_id)) && token_hash_positions[token.token_hash][i].owner==msg.sender) {
                 found_position=true;
                 position_index=i;
-                position=token.positions[i];
+                position=token_hash_positions[token.token_hash][i];
             }
         }
         require(found_position, "position with id not found");
@@ -265,5 +228,9 @@ contract Lock {
             tokens[index].token_state.total_tokens=tokens[index].token_state.total_tokens+to_give;
             user_holdings[msg.sender][holding_index].amount+=to_give;
         }
+        Position storage temp_var=token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1];
+        token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1]=token_hash_positions[token.token_hash][position_index];
+        token_hash_positions[token.token_hash][position_index]=temp_var;
+        token_hash_positions[token.token_hash].pop();
     }
 }

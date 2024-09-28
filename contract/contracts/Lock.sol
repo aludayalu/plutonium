@@ -5,7 +5,7 @@ import "hardhat/console.sol";
 contract Lock {
     Token[] tokens;
 
-    uint256 base_liquidity=2*(10**9);
+    uint256 base_liquidity=2*(10**18);
 
     mapping(address=>Holding[]) user_holdings;
     struct Holding {
@@ -122,9 +122,10 @@ contract Lock {
         uint256 amount_sent_native=(msg.value*99)/100;
         Token memory token;
         uint index=find_token(token_hash);
-        uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity+amount_sent_native));
-        togive=((token.token_state.total_tokens-togive)*amount_sent_native)/(token.token_state.liquidity+amount_sent_native);
+        token=tokens[index];
+        uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity));
         tokens[index].token_state.liquidity+=amount_sent_native;
+        tokens[index].token_state.total_tokens+=togive;
         bool found_holding; 
         uint holding_index;
         (holding_index, found_holding)=find_holding(token_hash);
@@ -145,8 +146,8 @@ contract Lock {
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
         uint256 togive_native=((token.token_state.liquidity*amount)/token.token_state.total_tokens);
-        togive_native=(((token.token_state.liquidity-togive_native)*amount)/token.token_state.total_tokens);
         user_holdings[msg.sender][holding_index].amount-=amount;
+        tokens[index].token_state.total_tokens+=amount;
         token.token_state.liquidity-=togive_native;
         caller_address.transfer(togive_native);
     }

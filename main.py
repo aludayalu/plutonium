@@ -101,4 +101,21 @@ def buy_token():
     except:
         return make_resonse(False)
 
+@app.get("/holdings")
+def holdings():
+    args=dict(request.args)
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    all_holdings=contract.local_call("Get_Holdings", [account["public_key"]])
+    user_holdings=[]
+    for holding in all_holdings:
+        token_details=contract.local_call("Get_Token", [holding[1]])[2]
+        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6]}
+        user_holdings.append({"token":token_details, "amount":int(holding[2])})
+    return make_response(user_holdings)
+
 app.run(host="0.0.0.0", port=7777)

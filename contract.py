@@ -29,30 +29,8 @@ def call_func(name, args=[], eth=0):
         tx_data
     )
     tx_create = w3.eth.account.sign_transaction(call_function, private_key)
-    while True:
-        try:
-            tx_hash = w3.eth.send_raw_transaction(tx_create.raw_transaction)
-            break
-        except Exception as e:
-            if web3.exceptions.TimeExhausted==type(e):
-                return
-            elif requests.exceptions.HTTPError==e:
-                time.sleep(1)
-                continue
-            else:
-                raise e
-    while True:
-        try:
-            w3.eth.wait_for_transaction_receipt(tx_hash)
-            break
-        except Exception as e:
-            if web3.exceptions.TimeExhausted==type(e):
-                return
-            elif requests.exceptions.HTTPError==e:
-                time.sleep(1)
-                continue
-            else:
-                raise e
+    tx_hash = w3.eth.send_raw_transaction(tx_create.raw_transaction)
+    w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_hash
 
 def local_call(name, args=[]):
@@ -67,3 +45,20 @@ def get_balance(address=None):
     balance_wei = w3.eth.get_balance(address)
     balance_eth = w3.from_wei(balance_wei, 'ether')
     return balance_eth
+
+def listen_for_events():
+    contract_address = get_contract_address()
+    contract = w3.eth.contract(address=contract_address, abi=abi)
+    funds_deposited_filter = contract.events.Price_Change.create_filter(from_block='latest')
+    funds_withdrawn_filter = contract.events.Price_Change.create_filter(from_block='latest')
+    while True:
+        for event in funds_deposited_filter.get_new_entries():
+            if event["blockNumber"]>int(open("last_block").read()):
+                open("last_block", "w").write(str(event["blockNumber"]))
+                yield event
+
+def create_account():
+    account = w3.eth.account.create()
+    private_key = account._private_key.hex()
+    public_key = account.address
+    return private_key, public_key

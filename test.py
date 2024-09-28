@@ -8,7 +8,7 @@ threading.Thread(target=event_listener).start()
 
 print("Balance:", contract.get_balance("0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"))
 
-contract.call_func("Create_Token", [["joe mama", "-", "-", "-", "-", "x.com", "JOEMAMA"]])
+contract.call_func("Create_Token", [["saut lagani hai", "https://i1.sndcdn.com/artworks-000237541959-i52bbu-t500x500.jpg", "bolna aunty au kya? Ghanti mein bajau kya?", "-", "-", "x.com", "BOLNA"]])
 
 print(len(contract.local_call("Get_All_Tokens")))
 

@@ -1,10 +1,11 @@
-import contract, flask, litedb, json, uuid
+import contract, flask, litedb, json, uuid, threading, time
 from flask import Flask, request
 
 app=Flask(__name__)
 accounts=litedb.get_conn("accounts.db")
 telegram_accounts=litedb.get_conn("telegram_accounts.db")
 registration_tokens=litedb.get_conn("registration_tokens.db")
+prices=litedb.get_conn("prices.db")
 
 def make_response(a):
     if type(a) in [int, bool, dict, list]:
@@ -15,7 +16,17 @@ def make_response(a):
 
 def event_listener():
     for event in contract.listen_for_events():
-        print(event)
+        x=event
+        event=dict(event["args"])
+        event["token_state"]=dict(event["token_state"])
+        token_prices=prices.get(event["token_hash"])
+        if token_prices==None:
+            token_prices=[]
+            prices.set(event["token_hash"], [])
+        token_prices.append(event | {"time":time.time()})
+        prices.set(event["token_hash"], token_prices)
+
+threading.Thread(target=event_listener).start()
 
 @app.get("/")
 def main():
@@ -99,12 +110,12 @@ def buy_token():
         contract.call_func("Buy_Token", [token], amount, signer, private_key)
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/sell")
 def sell_token():
     args=dict(request.args)
-    amount=float(args["amount"])
+    amount=int(float(args["amount"]))
     token=args["token"]
     private_key=""
     if "telegram_id" in args:
@@ -117,12 +128,12 @@ def sell_token():
         contract.call_func("Sell_Token", [token, amount, account["public_key"]], 0, signer, private_key)
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/long")
 def long_order():
     args=dict(request.args)
-    amount=float(args["amount"])
+    amount=int(float(args["amount"]))
     token=args["token"]
     leverage=int(args["leverage"])
     private_key=""
@@ -132,16 +143,17 @@ def long_order():
         private_key=args["private_key"]
     account=accounts.get(private_key)
     signer=contract.w3.eth.account.from_key(private_key)
+    contract.call_func("Create_Order", [token, amount, "long", 0, leverage], 0, signer, private_key)
     try:
         contract.call_func("Create_Order", [token, amount, "long", 0, leverage], 0, signer, private_key)
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/short")
 def short_order():
     args=dict(request.args)
-    amount=float(args["amount"])
+    amount=int(float(args["amount"]))
     token=args["token"]
     leverage=int(args["leverage"])
     private_key=""
@@ -155,12 +167,12 @@ def short_order():
         contract.call_func("Create_Order", [token, amount, "short", 0, leverage], 0, signer, private_key)
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/stake")
 def stake_order():
     args=dict(request.args)
-    amount=float(args["amount"])
+    amount=int(float(args["amount"]))
     token=args["token"]
     ttl=int(args["ttl"])
     private_key=""
@@ -171,10 +183,10 @@ def stake_order():
     account=accounts.get(private_key)
     signer=contract.w3.eth.account.from_key(private_key)
     try:
-        contract.call_func("Create_Order", [token, amount, "stake", ttl, 1], 0, signer, private_key)
+        
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/positions")
 def get_positions():
@@ -210,7 +222,7 @@ def close_position():
         contract.call_func("Close_Order", [id, token], 0, signer, private_key)
         return make_response(True)
     except:
-        return make_resonse(False)
+        return make_response(False)
 
 @app.get("/holdings")
 def holdings():
@@ -230,5 +242,29 @@ def holdings():
         token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6], "hash":hash}
         user_holdings.append({"token":token_details, "amount":int(holding[2])})
     return make_response(user_holdings)
+
+@app.get("/get_token_historical_data")
+def get_token_historical_data():
+    args=dict(request.args)
+    token=args["token"]
+    token_prices=prices.get(token)
+    if token_prices==None:
+        prices.set(token, [])
+        token_prices=[]
+    return make_response(token_prices)
+
+@app.get("/get_token_info")
+def get_token_info():
+    args=dict(request.args)
+    token=args["token"]
+    for x in contract.local_call("Get_All_Tokens"):
+        if x[1]==token:
+            return make_response(json.dumps(x))
+
+@app.get("/tokens_web")
+def tokens_web():
+    all_tokens=contract.local_call("Get_All_Tokens")
+    tokens=sorted(all_tokens, key=lambda x:x[-1], reverse=True)
+    return make_response(tokens)
 
 app.run(host="0.0.0.0", port=7777)

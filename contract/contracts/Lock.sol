@@ -25,6 +25,7 @@ contract Lock {
         Token_Metadata metadata;
         bool graduation;
         Token_State token_state;
+        uint last_tx;
     }
 
     struct Token_State {
@@ -83,7 +84,7 @@ contract Lock {
 
     function Create_Token(Token_Metadata memory token_metadata) public returns (string memory) {
         string memory token_hash = Hash(string(abi.encodePacked(msg.sender, block.number, msg.sig)));
-        tokens.push(Token(msg.sender, token_hash, token_metadata, false, Token_State(10**9, base_liquidity)));
+        tokens.push(Token(msg.sender, token_hash, token_metadata, false, Token_State(10**9, base_liquidity), block.number));
         emit Price_Change(token_hash, Token_State(10**9, base_liquidity), "create_token", msg.sender);
         return token_hash;
     }
@@ -145,6 +146,7 @@ contract Lock {
         } else {
             user_holdings[person].push(Holding(person, token_hash, togive));
         }
+        tokens[index].last_tx=block.number;
         emit Price_Change(token_hash, tokens[index].token_state, "buy", person);
     }
 
@@ -161,6 +163,7 @@ contract Lock {
         user_holdings[msg.sender][holding_index].amount-=amount;
         tokens[index].token_state.total_tokens+=amount;
         token.token_state.liquidity-=togive_native;
+        tokens[index].last_tx=block.number;
         emit Price_Change(token_hash, tokens[index].token_state, "sell", msg.sender);
         return togive_native;
     }
@@ -202,6 +205,7 @@ contract Lock {
         token_state.liquidity=token.token_state.liquidity;
         token_state.total_tokens=token.token_state.total_tokens;
         user_holdings[msg.sender][holding_index].amount-=amount;
+        tokens[index].last_tx=block.number;
         token_hash_positions[tokens[index].token_hash].push(Position(Hash(string(abi.encodePacked(msg.sig, token_hash, amount, block.number))), order_type, amount, token_state, ttl, msg.sender, leverage, block.number));
     }
 
@@ -246,6 +250,7 @@ contract Lock {
             tokens[index].token_state.total_tokens=tokens[index].token_state.total_tokens+to_give;
             user_holdings[msg.sender][holding_index].amount+=position.amount+to_give;
         }
+        tokens[index].last_tx=block.number;
         Position storage temp_var=token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1];
         token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1]=token_hash_positions[token.token_hash][position_index];
         token_hash_positions[token.token_hash][position_index]=temp_var;

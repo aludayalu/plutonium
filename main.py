@@ -101,6 +101,117 @@ def buy_token():
     except:
         return make_resonse(False)
 
+@app.get("/sell")
+def sell_token():
+    args=dict(request.args)
+    amount=float(args["amount"])
+    token=args["token"]
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    try:
+        contract.call_func("Sell_Token", [token, amount, account["public_key"]], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
+
+@app.get("/long")
+def long_order():
+    args=dict(request.args)
+    amount=float(args["amount"])
+    token=args["token"]
+    leverage=int(args["leverage"])
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    try:
+        contract.call_func("Create_Order", [token, amount, "long", 0, leverage], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
+
+@app.get("/short")
+def short_order():
+    args=dict(request.args)
+    amount=float(args["amount"])
+    token=args["token"]
+    leverage=int(args["leverage"])
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    try:
+        contract.call_func("Create_Order", [token, amount, "short", 0, leverage], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
+
+@app.get("/stake")
+def short_order():
+    args=dict(request.args)
+    amount=float(args["amount"])
+    token=args["token"]
+    ttl=int(args["ttl"])
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    try:
+        contract.call_func("Create_Order", [token, amount, "stake", ttl, 1], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
+
+@app.get("/positions")
+def get_positions():
+    args=dict(request.args)
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    positions=contract.local_call("Get_Positions", [account["public_key"]])
+    keys="id,position_type,amount,initial_state,time_to_live,owner,leverage,time".split(",")
+    new_positions=[]
+    for position in positions:
+        temp=[]
+        for i in range(len(position)):
+            temp.append([keys[i], position[i]])
+        new_position.append(dict(temp))
+    return make_response(new_positions)
+
+@app.get("/close_position")
+def close_position():
+    args=dict(request.args)
+    private_key=""
+    id=args["id"]
+    token=args["token"]
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    try:
+        contract.call_func("Close_Order", [id, token], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
+
 @app.get("/holdings")
 def holdings():
     args=dict(request.args)
@@ -113,8 +224,10 @@ def holdings():
     all_holdings=contract.local_call("Get_Holdings", [account["public_key"]])
     user_holdings=[]
     for holding in all_holdings:
-        token_details=contract.local_call("Get_Token", [holding[1]])[2]
-        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6]}
+        token_details=contract.local_call("Get_Token", [holding[1]])
+        hash=token_details[1]
+        token_details=token_details[2]
+        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6], "hash":hash}
         user_holdings.append({"token":token_details, "amount":int(holding[2])})
     return make_response(user_holdings)
 

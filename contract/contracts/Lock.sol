@@ -81,7 +81,7 @@ contract Lock {
             }
         }
         require(found_token, "token not found");
-        uint256 togive=((token.token_state.liquidity*amount_sent)/token.token_state.total_tokens);
+        uint256 togive=((token.token_state.total_tokens*amount_sent)/(token.token_state.liquidity+amount_sent));
         tokens[index].token_state.liquidity+=amount_sent;
         bool found_holding;
         uint holding_index;
@@ -120,7 +120,8 @@ contract Lock {
         }
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
-        uint256 togive_native=((token.token_state.total_tokens*amount)/token.token_state.liquidity);
+        uint256 togive_native=((token.token_state.liquidity*amount)/token.token_state.total_tokens);
+        togive_native=(((token.token_state.liquidity*amount)-togive_native)/token.token_state.total_tokens);
         user_holdings[msg.sender][holding_index].amount-=amount;
         token.token_state.liquidity-=togive_native;
         caller_address.transfer(togive_native);

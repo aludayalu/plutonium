@@ -16,7 +16,7 @@ def get_contract_address():
         return fd.read()
 
 def call_func(name, args=[], eth=0):
-    gwei=eth*(10**18)
+    gwei=int(eth*(10**18))
     contract_address=get_contract_address()
     contract = w3.eth.contract(address=contract_address, abi=abi)
     tx_data={

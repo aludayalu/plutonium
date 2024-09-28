@@ -81,7 +81,7 @@ contract Lock {
             }
         }
         require(found_token, "token not found");
-        uint256 togive=(token.token_state.liquidity/token.token_state.total_tokens)*amount_sent;
+        uint256 togive=((token.token_state.liquidity*amount_sent)/token.token_state.total_tokens);
         tokens[index].token_state.liquidity+=amount_sent;
         bool found_holding;
         uint holding_index;
@@ -96,5 +96,33 @@ contract Lock {
         } else {
             user_holdings[msg.sender].push(Holding(msg.sender, token_hash, togive));
         }
+    }
+
+    function Sell_Token(string memory token_hash, uint256 amount, address payable caller_address) public {
+        Token memory token;
+        bool found_token;
+        uint index;
+        for (uint i = 0; i < tokens.length; i++) {
+            if (keccak256(abi.encodePacked(tokens[i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
+                found_token=true;
+                token=tokens[i];
+                index=i;
+            }
+        }
+        require(found_token, "token not found");
+        bool found_holding;
+        uint holding_index;
+        for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
+            if (keccak256(abi.encodePacked(user_holdings[msg.sender][i].token_hash))==keccak256(abi.encodePacked(token_hash))) {
+                found_holding=true;
+                holding_index=i;
+            }
+        }
+        require(found_holding, "you must hold the token");
+        require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
+        uint256 togive_native=((token.token_state.total_tokens*amount)/token.token_state.liquidity);
+        user_holdings[msg.sender][holding_index].amount-=amount;
+        token.token_state.liquidity-=togive_native;
+        caller_address.transfer(togive_native);
     }
 }

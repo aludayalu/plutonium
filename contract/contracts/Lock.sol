@@ -269,7 +269,6 @@ contract Lock {
 
     function Swap_Tokens(string memory token1_hash, string memory token2_hash, uint256 amount) public {
         uint256 net_balance=Sell_Token_Private(token1_hash, amount);
-        console.log(net_balance);
         Buy_Private(msg.sender, net_balance, token2_hash);
     }
 }

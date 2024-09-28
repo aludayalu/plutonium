@@ -36,7 +36,7 @@ def get_telegram_account_info():
         result=user
     else:
         result=accounts.get(result)
-    result=result|{"balance":contract.get_balance(result["public_key"])}
+    result=result|{"balance":float(contract.get_balance(result["public_key"]))}
     return make_response(result)
 
 @app.get("/get_account_info")
@@ -45,7 +45,7 @@ def get_account_info():
     result=accounts.get(args["private_key"])
     if result==None:
         return {"error":"account does not exist"}
-    result=result|{"balance":contract.get_balance(result["public_key"])}
+    result=result|{"balance":float(contract.get_balance(result["public_key"]))}
     return make_response(result)
 
 @app.get("/registration_token_info")
@@ -71,5 +71,34 @@ def submit_registration():
         return make_response(account)
     else:
         return make_response(False)
+
+@app.get("/balance")
+def account_balance():
+    args=dict(request.args)
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    return make_response(str(float(contract.get_balance(account["public_key"]))))
+
+@app.get("/buy")
+def buy_token():
+    args=dict(request.args)
+    amount=float(args["amount"])
+    token=args["token"]
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    try:
+        contract.call_func("Buy_Token", [token], amount, signer, private_key)
+        return make_response(True)
+    except:
+        return make_resonse(False)
 
 app.run(host="0.0.0.0", port=7777)

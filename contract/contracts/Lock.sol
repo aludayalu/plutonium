@@ -239,7 +239,7 @@ contract Lock {
             require(block.number>=(position.time_to_live+position.time), "cannot unstake before time to live is over for the position");
             uint256 to_give=(position.amount*stake_maps_percent[position.time_to_live])/100;
             tokens[index].token_state.total_tokens=tokens[index].token_state.total_tokens+to_give;
-            user_holdings[msg.sender][holding_index].amount+=to_give;
+            user_holdings[msg.sender][holding_index].amount+=position.amount+to_give;
         }
         Position storage temp_var=token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1];
         token_hash_positions[token.token_hash][token_hash_positions[token.token_hash].length-1]=token_hash_positions[token.token_hash][position_index];

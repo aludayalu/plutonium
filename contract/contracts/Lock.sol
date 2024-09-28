@@ -69,7 +69,7 @@ contract Lock {
     }
 
     function Buy_Token(string memory token_hash) payable public {
-        uint256 amount_sent=(msg.value*99)/100;
+        uint256 amount_sent_native=(msg.value*99)/100;
         Token memory token;
         bool found_token;
         uint index;
@@ -81,8 +81,10 @@ contract Lock {
             }
         }
         require(found_token, "token not found");
-        uint256 togive=((token.token_state.total_tokens*amount_sent)/(token.token_state.liquidity+amount_sent));
-        tokens[index].token_state.liquidity+=amount_sent;
+        uint256 togive=((token.token_state.total_tokens*amount_sent_native)/(token.token_state.liquidity+amount_sent_native));
+        togive=((token.token_state.total_tokens-togive)*amount_sent_native)/(token.token_state.liquidity+amount_sent_native);
+        token.token_state.total_tokens-=togive;
+        tokens[index].token_state.liquidity+=amount_sent_native;
         bool found_holding;
         uint holding_index;
         for (uint i = 0; i < user_holdings[msg.sender].length; i++) {
@@ -121,6 +123,7 @@ contract Lock {
         require(found_holding, "you must hold the token");
         require(user_holdings[msg.sender][holding_index].amount>=amount, "you cannot sell more than you own");
         uint256 togive_native=((token.token_state.liquidity*amount)/token.token_state.total_tokens);
+        token.token_state.total_tokens+=amount;
         togive_native=(((token.token_state.liquidity*amount)-togive_native)/token.token_state.total_tokens);
         user_holdings[msg.sender][holding_index].amount-=amount;
         token.token_state.liquidity-=togive_native;

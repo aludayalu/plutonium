@@ -158,7 +158,7 @@ def short_order():
         return make_resonse(False)
 
 @app.get("/stake")
-def short_order():
+def stake_order():
     args=dict(request.args)
     amount=float(args["amount"])
     token=args["token"]

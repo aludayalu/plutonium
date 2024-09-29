@@ -5,6 +5,9 @@
 <script src="Dark.js"></script>
 
 <script>
+
+    current_ETH_relative_price=0;
+
     am5.ready(function() {
         var root = am5.Root.new("chartdiv");
         root.setThemes([
@@ -147,27 +150,6 @@
         var value = 1200;
 
         function generateChartData() {
-            var chartData=[];
-            var data={data};
-            for (let index = 0; index < data.length; index++) {
-                const element = data[index];
-                chartData.push(
-                    {
-                        "Date":new Date(element.time * 1000),
-                        "Close":element.close,
-                        "Open":element.open,
-                        "Low":element.low,
-                        "High":element.high
-                    }
-                )
-                lastDate=new Date(element.time * 1000);
-                value=element.close;
-            }
-            console.log(chartData)
-            return chartData;
-        }
-
-        function generateChartData() {
             var chartData = [];
             var data={data};
 
@@ -175,11 +157,11 @@
                 var element=data[i];
                 var newDate = new Date(element.time * 1000);
 
-                value = element.close;
+                value = element.close/(10**9);
 
-                var open = element.open;
-                var low = element.low;
-                var high = element.high;
+                var open = element.open/(10**9);
+                var low = element.low/(10**9);
+                var high = element.high/(10**9);
 
                 chartData.push({
                     Date: newDate.getTime(),
@@ -193,6 +175,8 @@
             }
             return chartData.reverse();
         }
+
+        current_ETH_relative_price=value/(10**9);
 
         var data = generateChartData();
 
@@ -270,7 +254,8 @@
         eventSource.onmessage = function(event) {
             var data=JSON.parse(event.data)
             var price=data.token_state.liquidity/data.token_state.total_tokens;
-            OnPriceChange(price, (new Date(data.time * 1000)).getTime())
+            OnPriceChange(price/(10**9), (new Date(data.time * 1000)).getTime())
+            current_ETH_relative_price=price/(10**9);
         }
     });
 </script>

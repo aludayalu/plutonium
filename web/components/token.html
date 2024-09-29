@@ -5,13 +5,14 @@
     {daisyui}
 </head>
 
-<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '')</script>
+<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '');</script>
 
 <script>
+    var privKey = Signal("privKey", document.cookie.match('(^|;)\\s*' + "private_key" + '\\s*=\\s*([^;]+)')?.pop() || '');
+    var current_ETH_relative_price=0;
     const token_details = {tokenDetails}
-    // const acc_Bal = {accBal}
-    // const token_Bal = {tokenBal}
 
+    var holdings = Signal("holdings", {"eth":0})
     var order_type = Signal("order_type", 0)
     var orders_bottom_history_type = Signal("orders_bottom_history_type", 0)
     var currentTicker = Signal("currentTicker", `$${token_details[2][6]}`)
@@ -25,6 +26,47 @@
     var ethBalance = Signal("ethBalance", 0)
     var tickerBalance = Signal("tickerBalance", 0)
     var leverage = Signal("leverage", 1)
+    var positions = Signal("positions", [])
+    var transactions = Signal("transactions", [])
+
+    var refresh_positions = async ()=>{
+        var request=await (await fetch("http://10.43.0.96:7777/positions?token="+encodeURIComponent(token_details[1]))).json()
+        positions.setValue(request)
+    }
+
+    var refresh_transactions = async () => {
+        var request=await (await fetch("http://10.43.0.96:7777/get_token_historical_data?token="+encodeURIComponent(token_details[1]))).json()
+        var trades=[]
+        for (let index = 0; index < request.length; index++) {
+            const element = request[index];
+            for (let i = 0; i < element.trades.length; i++) {
+                const e =element.trades[i];
+                trades.push(e)
+            }
+        }
+        transactions.setValue(trades)
+        console.log(trades)
+    }
+
+    refresh_transactions()
+
+    setInterval(refresh_transactions, 5000)
+    
+    refresh_positions()
+
+    setInterval(refresh_positions, 5000)
+
+
+    var refresh_balances=async ()=>{
+        var request=await (await fetch("http://10.43.0.96:7777/all_user_balances?address="+pubKey.Value())).json()
+        holdings.setValue(request)
+        ethBalance.setValue(request["eth"].toFixed(5))
+        tickerBalance.setValue(request[token_details[1]])
+    }
+
+    refresh_balances()
+    
+    setInterval(refresh_balances, 5000)
 
     DerivedFrom("Buy_order_color", () => {
         if (order_type.Value() == 0) {
@@ -71,6 +113,14 @@
         }
     }, ["orders_bottom_history_type"])
 
+    DerivedFrom("transaction_order_color", () => {
+        if (orders_bottom_history_type.Value() == 2) {
+            return "bg-[#0A84FF]/70"
+        } else {
+            return ""
+        }
+    }, ["orders_bottom_history_type"])
+
 
     DerivedFrom("x1xlevbg", () => {
         if (leverage.Value() == 1) {
@@ -100,6 +150,28 @@
             return "bg-[#0A84FF]/10"
         }
     }, ["leverage"])
+
+    async function Buy() {
+        await fetch("http://10.43.0.96:7777/buy?private_key="+privKey.Value()+"&amount="+encodeURIComponent(amountInpVal.Value())+"&token="+encodeURIComponent(token_details[1]))
+        refresh_balances()
+    }
+
+    async function Sell() {
+        await fetch("http://10.43.0.96:7777/sell?private_key="+privKey.Value()+"&amount="+encodeURIComponent(amountInpVal.Value())+"&token="+encodeURIComponent(token_details[1]))
+        refresh_balances()
+    }
+
+    async function Long() {
+        await fetch("http://10.43.0.96:7777/long?private_key="+privKey.Value()+"&amount="+encodeURIComponent(amountInpVal.Value())+"&token="+encodeURIComponent(token_details[1])+"&leverage="+encodeURIComponent(leverage.Value()))
+        await refresh_balances()
+        refresh_positions()
+    }
+
+    async function Short() {
+        await fetch("http://10.43.0.96:7777/short?private_key="+privKey.Value()+"&amount="+encodeURIComponent(amountInpVal.Value())+"&token="+encodeURIComponent(token_details[1])+"&leverage="+encodeURIComponent(leverage.Value()))
+        await refresh_balances()
+        refresh_positions()
+    }
 </script>
 
 <body data-theme="forest">
@@ -126,8 +198,9 @@
                     </div>
                     <div class="flex flex-col">
                         <div class="flex p-3 bg-white/[0.03] gap-1">
-                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {open_order_color}" onclick="orders_bottom_history_type.setValue(0)">Open Positions</div>
-                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {closed_order_color}" onclick="orders_bottom_history_type.setValue(1)">Closed Orders</div>
+                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {open_order_color}" onclick="orders_bottom_history_type.setValue(0)">Your Positions</div>
+                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {closed_order_color}" onclick="orders_bottom_history_type.setValue(1)">All Positions</div>
+                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {transaction_order_color}" onclick="orders_bottom_history_type.setValue(2)">All Transactions</div>
                         </div>
                     </div>
                 </div>
@@ -254,22 +327,22 @@
                         <div>
                             <if "order_type.Value()==0" dep:order_type>
                                 <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Buy {currentTicker}</button>
+                                    <button onclick="Buy()" class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Buy {currentTicker}</button>
                                 </div>
                             </if>
                             <if "order_type.Value()==1" dep:order_type>
                                 <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Sell {currentTicker}</button>
+                                    <button onclick="Sell()" class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Sell {currentTicker}</button>
                                 </div>
                             </if>
                             <if "order_type.Value()==2" dep:order_type>
                                 <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Long {currentTicker}</button>
+                                    <button onclick="Long()" class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Long {currentTicker}</button>
                                 </div>
                             </if>
                             <if "order_type.Value()==3" dep:order_type>
                                 <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Short {currentTicker}</button>
+                                    <button onclick="Short()" class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Short {currentTicker}</button>
                                 </div>
                             </if>
                         </div>

@@ -190,20 +190,15 @@ def stake_order():
 @app.get("/positions")
 def get_positions():
     args=dict(request.args)
-    private_key=""
-    if "telegram_id" in args:
-        private_key=telegram_accounts.get(args["telegram_id"])
-    else:
-        private_key=args["private_key"]
-    account=accounts.get(private_key)
-    positions=contract.local_call("Get_Positions", [account["public_key"]])
+    token=args["token"]
+    positions=contract.local_call("Get_Positions", [token])
     keys="id,position_type,amount,initial_state,time_to_live,owner,leverage,time".split(",")
     new_positions=[]
     for position in positions:
         temp=[]
         for i in range(len(position)):
             temp.append([keys[i], position[i]])
-        new_position.append(dict(temp))
+        new_positions.append(dict(temp))
     return make_response(new_positions)
 
 @app.get("/close_position")
@@ -312,5 +307,13 @@ def listening_for_price_updates():
     resp=Response(event_stream(args["token"]), content_type="text/event-stream")
     resp.headers["Access-Control-Allow-Origin"]="*"
     return resp
+
+@app.get("/all_user_balances")
+def user_balances():
+    args=dict(request.args)
+    holdings={"eth":float(contract.get_balance(args["address"]))}
+    for holding in contract.local_call("Get_Holdings", [args["address"]]):
+        holdings[holding[1]]=holding[2]
+    return make_response(holdings)
 
 app.run(host="0.0.0.0", port=7777)

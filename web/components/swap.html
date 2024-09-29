@@ -5,16 +5,49 @@
     {daisyui}
 </head>
 
-<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '')</script>
+<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '');</script>
 
 <script>
-    var ticker = ["$ETH", "$LTZ", "$ABC", "$GUD"]
+    var holdings = Signal("holdings", {})
+    var privKey = Signal("privKey", document.cookie.match('(^|;)\\s*' + "private_key" + '\\s*=\\s*([^;]+)')?.pop() || '');
+
+    var refresh_balances=async ()=>{
+        var request=await (await fetch("http://10.43.0.96:7777/holdings?private_key="+privKey.Value())).json()
+        holdings.setValue(request)
+    }
+
+    refresh_balances()
+    
+    setInterval(refresh_balances, 5000)
 
     var fromDropdown = Signal("fromDropdown", "close")
     var fromDropdownValue = Signal("fromDropdownValue", 0)
+
+    function OnInput() {
+        if (document.getElementById("fromAmount").value>holdings.Value()[fromDropdownValue.Value()].amount) {
+            document.getElementById("fromAmount").value=holdings.Value()[fromDropdownValue.Value()].amount
+        }
+        var first_coin=holdings.Value()[fromDropdownValue.Value()].token
+        var second_coin=holdings.Value()[toDropdownValue.Value()].token
+        document.getElementById("toAmount").value=((first_coin["liquidity"]/first_coin["tokens"])*document.getElementById("fromAmount").value)*(second_coin["tokens"]/second_coin["liquidity"])
+    }
+
+    function Swap_Tokens() {
+        var amount=document.getElementById("fromAmount").value
+        var first_coin=holdings.Value()[fromDropdownValue.Value()].token
+        var second_coin=holdings.Value()[toDropdownValue.Value()].token
+        fetch("http://10.43.0.96:7777/swap_tokens?private_key="+privKey.Value()+"&token1="+encodeURIComponent(first_coin.hash)+"&token2="+encodeURIComponent(second_coin.hash)+"&amount="+encodeURIComponent(amount)).then(()=>{
+            refresh_balances()
+            document.getElementById("fromAmount").value=0
+            document.getElementById("toAmount").value=0
+        })
+    }
+
     DerivedFrom("fromCurrentTicker", () => {
-        return ticker[fromDropdownValue.Value()]
-    }, ["fromDropdownValue"])
+        try {
+            return holdings.Value()[fromDropdownValue.Value()].token.ticker
+        } catch {}
+    }, ["fromDropdownValue", "holdings"])
     function fromToggleDropdown(){
         fromDropdown.setValue(fromDropdown.Value() === "close" ? "open" : "close")
     }
@@ -22,8 +55,10 @@
     var toDropdown = Signal("toDropdown", "close")
     var toDropdownValue = Signal("toDropdownValue", 0)
     DerivedFrom("toCurrentTicker", () => {
-        return ticker[toDropdownValue.Value()]
-    }, ["toDropdownValue"])
+        try {
+            return holdings.Value()[toDropdownValue.Value()].token.ticker
+        } catch {}
+    }, ["toDropdownValue", "holdings"])
     function toToggleDropdown(){
         toDropdown.setValue(toDropdown.Value() === "close" ? "open" : "close")
     }
@@ -70,16 +105,13 @@
                     
                     <if "fromDropdown.Value() == 'open'" dep:fromDropdown>
                         <div class="z-10 absolute left-0 top-10 bg-white rounded-lg shadow w-32">
-                            <div class="py-2 flex flex-col">
-                                <p onclick="fromDropdownValue.setValue(0);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[0]}</p>
-                                <p onclick="fromDropdownValue.setValue(1);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[1]}</p>
-                                <p onclick="fromDropdownValue.setValue(2);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[2]}</p>
-                                <p onclick="fromDropdownValue.setValue(3);fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[3]}</p>
-                            </div>
+                            <for i and element in holdings class="py-2 flex flex-col">
+                                <p onclick="fromDropdownValue.setValue({i});fromToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{"holdings.Value()[i].token.ticker"}</p>
+                            </for>
                         </div>
                     </if>
 
-                    <input id="fromAmount" type="number" class="outline-none border-none pl-2 w-full" placeholder="0"></input>
+                    <input id="fromAmount" oninput="OnInput()" type="number" class="outline-none border-none pl-2 w-full" placeholder="0"></input>
 
                     <p class="absolute right-3 top-1.5">FROM</p>
                 </div>
@@ -101,19 +133,16 @@
                     
                     <if "toDropdown.Value() == 'open'" dep:toDropdown>
                         <div class="z-10 absolute left-0 top-10 bg-white rounded-lg shadow w-32">
-                            <div class="py-2 flex flex-col">
-                                <p onclick="toDropdownValue.setValue(0);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[0]}</p>
-                                <p onclick="toDropdownValue.setValue(1);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[1]}</p>
-                                <p onclick="toDropdownValue.setValue(2);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[2]}</p>
-                                <p onclick="toDropdownValue.setValue(3);toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{ticker[3]}</p>
-                            </div>
+                            <for i and element in holdings class="py-2 flex flex-col">
+                                <p onclick="toDropdownValue.setValue({i});toToggleDropdown()" class="text-black hover:bg-black/10 py-0.5 px-2 cursor-pointer">{"holdings.Value()[i].token.ticker"}</p>
+                            </for>
                         </div>
                     </if>
-                    <input id="toAmount" type="number" class="outline-none border-none pl-2 w-full" placeholder="0"></input>
+                    <input id="toAmount" type="number" class="outline-none border-none pl-2 w-full" placeholder="0" disabled></input>
                     <p class="absolute right-3 top-1.5">TO</p>
                 </div>
 
-                <button class="border border-[#0A84FF] bg-[#0A84FF]/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition">Swap Tokens</button>
+                <button class="border border-[#0A84FF] bg-[#0A84FF]/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition" onclick="Swap_Tokens()">Swap Tokens</button>
             </div>
         </div>
 

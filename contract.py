@@ -16,22 +16,36 @@ def get_contract_address():
         return fd.read()
 
 def call_func(name, args=[], eth=0, account=account, private_key=private_key):
-    gwei=int(eth*(10**18))
-    contract_address=get_contract_address()
+    gwei = int(eth * (10**18))
+    contract_address = get_contract_address()
     contract = w3.eth.contract(address=contract_address, abi=abi)
-    tx_data={
-            'from': account.address,
-            'nonce': w3.eth.get_transaction_count(account.address),
-        }
-    if gwei!=0:
-        tx_data["value"]=gwei
-    call_function = getattr(contract.functions, name)(*args).build_transaction(
-        tx_data
-    )
+    
+    # Estimate gas for the transaction
+    gas_estimate = getattr(contract.functions, name)(*args).estimate_gas({
+        'from': account.address
+    })
+
+    tx_data = {
+        'from': account.address,
+        'nonce': w3.eth.get_transaction_count(account.address),
+        'gas': gas_estimate * 5,  # Add 5x gas multiplier
+        'gasPrice': w3.eth.gas_price  # Optional: you can set a custom gas price here
+    }
+
+    if gwei != 0:
+        tx_data["value"] = gwei
+
+    # Build and sign the transaction
+    call_function = getattr(contract.functions, name)(*args).build_transaction(tx_data)
     tx_create = w3.eth.account.sign_transaction(call_function, private_key)
+
+    # Send the signed transaction
     tx_hash = w3.eth.send_raw_transaction(tx_create.raw_transaction)
+    
+    # Wait for the transaction receipt
     w3.eth.wait_for_transaction_receipt(tx_hash)
     return tx_hash
+
 
 def local_call(name, args=[]):
     contract_address=get_contract_address()

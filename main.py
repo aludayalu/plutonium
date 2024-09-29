@@ -143,7 +143,6 @@ def long_order():
         private_key=args["private_key"]
     account=accounts.get(private_key)
     signer=contract.w3.eth.account.from_key(private_key)
-    contract.call_func("Create_Order", [token, amount, "long", 0, leverage], 0, signer, private_key)
     try:
         contract.call_func("Create_Order", [token, amount, "long", 0, leverage], 0, signer, private_key)
         return make_response(True)
@@ -183,7 +182,7 @@ def stake_order():
     account=accounts.get(private_key)
     signer=contract.w3.eth.account.from_key(private_key)
     try:
-        
+        contract.call_func("Create_Order", [token, amount, "stake", ttl, 1], 0, signer, private_key)
         return make_response(True)
     except:
         return make_response(False)
@@ -263,8 +262,12 @@ def get_token_info():
 
 @app.get("/tokens_web")
 def tokens_web():
-    all_tokens=contract.local_call("Get_All_Tokens")
-    tokens=sorted(all_tokens, key=lambda x:x[-1], reverse=True)
+    args=dict(request.args)
+    search=""
+    if "search" in args:
+        search=args["search"]
+    all_tokens=[x for x in contract.local_call("Get_All_Tokens") if search.lower() in str(x).lower()]
+    tokens=sorted(all_tokens, key=lambda x:x[-1], reverse=True)[:100]
     return make_response(tokens)
 
 app.run(host="0.0.0.0", port=7777)

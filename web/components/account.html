@@ -1,0 +1,71 @@
+<head>
+    <title>Swap | Plutonium</title>
+    <link rel="stylesheet" href="main.css"></link>
+    {tailwind}
+    {daisyui}
+</head>
+
+<script>
+    var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '')
+</script>
+
+<script>
+    var totBal = Signal("totBal", 250.452);
+    // const responseHoldings = {responseHoldings}
+    // const responseAccBal = {responseAccBal}
+
+    // const sum = 0
+
+    // responseHoldings.forEach((item) => {
+    //     item[1]
+    // })
+
+
+
+    console.log(responseHoldings, responseAccBal)
+</script>
+
+<body data-theme="forest" class="max-h-screen">
+
+    {navbar}
+    
+    <div class="w-full h-full pl-[66px] pt-[10px]">
+
+        <div class="flex justify-between h-[34px] mb-2 mx-[15px]">
+            <div class="flex gap-2 items-center border border-white/10 px-1.5 py-1.5 rounded-lg w-[500px]">
+                <svg width="17" height="17" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="8.3" cy="8.3" r="6.8" stroke="#8c8888" stroke-width="1.13333"></circle>
+                    <path d="M17.8493 18.6507C18.0706 18.872 18.4294 18.872 18.6507 18.6507C18.872 18.4294 18.872 18.0706 18.6507 17.8493L17.8493 18.6507ZM13.6507 12.8493L13.25 12.4486L12.4486 13.25L12.8493 13.6507L13.6507 12.8493ZM18.6507 17.8493L13.6507 12.8493L12.8493 13.6507L17.8493 18.6507L18.6507 17.8493Z" fill="#8c8888"></path>
+                </svg>                
+                <input type="text" placeholder="Search" class="w-full outline-none placeholder:text-white/50 text-sm"></input>
+            </div>
+
+            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">{pubKey}</button>
+        </div>
+
+        <div class="w-full h-[calc(100vh-64px)] flex justify-center items-center">
+            <div class="flex flex-col bg-white/[0.02] border border-white/[0.08] w-[450px] p-5 rounded-xl gap-5">
+
+                <div class="w-full flex justify-center items-center h-[80px]">
+                    <p class="font-semibold text-white text-4xl w-fit">{totBal} ETH</p>
+                </div>
+
+                <div class="flex items-center gap-3 rounded-lg border-2 border-white/[0.1] bg-white/[0.02] relative p-3">
+                    <img src="ht" onerror="this.src='https://api.dicebear.com/9.x/initials/svg?seed=er32344ddw'" class="w-[45px] h-[45px] rounded-full object-cover"></img>
+                    <div class="flex flex-col">
+                        <p class="text-white/90 text-lg font-medium">Brodyaga Phonk</p>
+                        <p class="text-white/60">133.13 BYP</p>
+                    </div>
+
+                    <p class="text-lg text-white/60 text-right flex-1">200 ETH</p>
+                </div>
+
+                <div class="flex gap-5">
+                    <button class="border border-whitekl bg-white/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition">Send</button>
+                    <button class="border border-whitekl bg-white/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition">Swap</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>

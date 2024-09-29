@@ -5,6 +5,8 @@
     {daisyui}
 </head>
 
+<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '')</script>
+
 <script>
     var tokens = Signal("tokens", [])
     function Update_Tokens() {
@@ -36,7 +38,7 @@
                 <input type="text" placeholder="Search" id="search" class="w-full outline-none placeholder:text-white/50 text-sm" oninput="Update_Tokens()"></input>
             </div>
 
-            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">@AtharvVarshney7</button>
+            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">{pubKey}</button>
         </div>
 
         <for i and element in tokens class="w-full max-h-[calc(100vh-64px)] grid grid-cols-3 gap-10 pt-10">

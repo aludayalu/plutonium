@@ -5,6 +5,8 @@
     {daisyui}
 </head>
 
+<script>var pubKey = Signal("pubKey", document.cookie.match('(^|;)\\s*' + "public_key" + '\\s*=\\s*([^;]+)')?.pop() || '')</script>
+
 <script>
     var ticker = ["$ETH", "$LTZ", "$ABC", "$GUD"]
 
@@ -47,7 +49,7 @@
                 <input type="text" placeholder="Search" class="w-full outline-none placeholder:text-white/50 text-sm"></input>
             </div>
 
-            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">@AtharvVarshney7</button>
+            <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">{pubKey}</button>
         </div>
 
         <div class="w-full h-[calc(100vh-64px)] flex justify-center items-center">

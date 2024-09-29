@@ -62,6 +62,7 @@
         holdings.setValue(request)
         ethBalance.setValue(request["eth"].toFixed(5))
         tickerBalance.setValue(request[token_details[1]])
+        refresh_transactions()
     }
 
     refresh_balances()

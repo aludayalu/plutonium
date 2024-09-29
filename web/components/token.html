@@ -9,10 +9,10 @@
 
 <script>
     var privKey = Signal("privKey", document.cookie.match('(^|;)\\s*' + "private_key" + '\\s*=\\s*([^;]+)')?.pop() || '');
-    var current_ETH_relative_price=0;
+    var current_GAS_relative_price=0;
     const token_details = {tokenDetails}
 
-    var holdings = Signal("holdings", {"eth":0})
+    var holdings = Signal("holdings", {"GAS":0})
     var order_type = Signal("order_type", 0)
     var orders_bottom_history_type = Signal("orders_bottom_history_type", 0)
     var currentTicker = Signal("currentTicker", `$${token_details[2][6]}`)
@@ -23,7 +23,7 @@
     var currentCoinTG = Signal("currentCoinTG", token_details[2][3])
     var currentCoinWebsite = Signal("currentCoinWebsite", token_details[2][5])
     var amountInpVal = Signal("amountInpVal", 0)
-    var ethBalance = Signal("ethBalance", 0)
+    var GASBalance = Signal("GASBalance", 0)
     var tickerBalance = Signal("tickerBalance", 0)
     var leverage = Signal("leverage", 1)
     var positions = Signal("positions", [])
@@ -32,6 +32,10 @@
     var refresh_positions = async ()=>{
         var request=await (await fetch("http://10.43.0.96:7777/positions?token="+encodeURIComponent(token_details[1]))).json()
         positions.setValue(request)
+    }
+
+    async function Close_Position(id) {
+        var request=await (await fetch("http://10.43.0.96:7777/close_position?token="+encodeURIComponent(token_details[1])+"&private_key="+encodeURIComponent(privKey.Value())+"&id="+encodeURIComponent(id))).json()
     }
 
     var refresh_transactions = async () => {
@@ -60,7 +64,7 @@
     var refresh_balances=async ()=>{
         var request=await (await fetch("http://10.43.0.96:7777/all_user_balances?address="+pubKey.Value())).json()
         holdings.setValue(request)
-        ethBalance.setValue(request["eth"].toFixed(5))
+        GASBalance.setValue(request["GAS"].toFixed(5))
         tickerBalance.setValue(request[token_details[1]])
         refresh_transactions()
     }
@@ -241,7 +245,7 @@
                                         <script>document.currentScript.nextElementSibling.textContent = element.owner</script>
                                         <p class="px-2 col-span-2 truncate"></p>
                                         
-                                        <button onclick="Buy()" class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded text-center truncate px-5 text-white text-sm font-medium w-fit">Close</button>
+                                        <button onclick="Close_Position('{element.id}')" class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded text-center truncate px-5 text-white text-sm font-medium w-fit">Close</button>
                                     </div>
                                 </for>
                             </if>
@@ -322,7 +326,7 @@
                             <p class="text-xl text-white">Balance:</p>
                             <div>
                                 <if "order_type.Value()==0" dep:order_type>
-                                    <p class="text-xl font-medium">{ethBalance} ETH</p>
+                                    <p class="text-xl font-medium">{GASBalance} GAS</p>
                                 </if>
                                 <if "order_type.Value()==1" dep:order_type>
                                     <p class="text-xl font-medium">{tickerBalance} {currentTicker}</p>
@@ -341,7 +345,7 @@
                             <input id="amountInp" type="number" class="outline-none border-none pl-2 pr-14 w-full" placeholder="0"></input>
                             <div>
                                 <if "order_type.Value()==0" dep:order_type>
-                                    <p class="absolute right-3 top-1.5">ETH</p>
+                                    <p class="absolute right-3 top-1.5">GAS</p>
                                 </if>
                                 <if "order_type.Value()==1" dep:order_type>
                                     <p class="absolute right-3 top-1.5">{currentTicker}</p>
@@ -359,16 +363,16 @@
                             <if "order_type.Value()==0" dep:order_type>
                                 <div class="flex gap-2 mx-4">
                                     <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.001; amountInpVal.setValue(0.001)">
-                                        0.001 ETH
+                                        0.001 GAS
                                     </div>
                                     <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.01; amountInpVal.setValue(0.01)">
-                                        0.01 ETH
+                                        0.01 GAS
                                     </div>
                                     <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.005; amountInpVal.setValue(0.005)">
-                                        0.05 ETH
+                                        0.05 GAS
                                     </div>
                                     <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.1; amountInpVal.setValue(0.1)">
-                                        0.1 ETH
+                                        0.1 GAS
                                     </div>
                                 </div>
                             </if>
@@ -449,16 +453,16 @@
 
                         <div class="px-4">
                             <if "order_type.Value()==0" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Buying {amountInpVal} {currentTicker} for 500 ETH</p>
+                                <p class="text-sm text-white/50 text-right">Buying {amountInpVal} {currentTicker} for 500 GAS</p>
                             </if>
                             <if "order_type.Value()==1" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Selling {amountInpVal} {currentTicker} for 500 ETH</p>
+                                <p class="text-sm text-white/50 text-right">Selling {amountInpVal} {currentTicker} for 500 GAS</p>
                             </if>
                             <if "order_type.Value()==2" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Longing {amountInpVal} {currentTicker} at 250 ETH</p>
+                                <p class="text-sm text-white/50 text-right">Longing {amountInpVal} {currentTicker} at 250 GAS</p>
                             </if>
                             <if "order_type.Value()==3" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Shorting {amountInpVal} {currentTicker} at 250 ETH</p>
+                                <p class="text-sm text-white/50 text-right">Shorting {amountInpVal} {currentTicker} at 250 GAS</p>
                             </if>
                         </div>
 

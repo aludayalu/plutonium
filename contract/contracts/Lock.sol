@@ -162,7 +162,7 @@ contract Lock {
         uint256 togive_native=((token.token_state.liquidity*amount)/(token.token_state.total_tokens+amount));
         user_holdings[msg.sender][holding_index].amount-=amount;
         tokens[index].token_state.total_tokens+=amount;
-        token.token_state.liquidity-=togive_native;
+        tokens[index].token_state.liquidity-=togive_native;
         tokens[index].last_tx=block.number;
         emit Price_Change(token_hash, tokens[index].token_state, "sell", msg.sender);
         return togive_native;

@@ -94,6 +94,11 @@ def account_balance():
     account=accounts.get(private_key)
     return make_response(str(float(contract.get_balance(account["public_key"]))))
 
+@app.get("/public_balance")
+def public_balance():
+    args=dict(request.args)
+    return make_response(str(float(contract.get_balance(args["public_key"]))))
+
 @app.get("/buy")
 def buy_token():
     args=dict(request.args)
@@ -251,6 +256,20 @@ def holdings():
         private_key=args["private_key"]
     account=accounts.get(private_key)
     all_holdings=contract.local_call("Get_Holdings", [account["public_key"]])
+    user_holdings=[]
+    for holding in all_holdings:
+        token_details=contract.local_call("Get_Token", [holding[1]])
+        raw=token_details
+        hash=token_details[1]
+        token_details=token_details[2]
+        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6], "hash":hash, "liquidity":raw[4][1], "tokens":raw[4][0]}
+        user_holdings.append({"token":token_details, "amount":int(holding[2])})
+    return make_response(user_holdings)
+
+@app.get("/public_holdings")
+def public_holdings():
+    args=dict(request.args)
+    all_holdings=contract.local_call("Get_Holdings", [args["public_key"]])
     user_holdings=[]
     for holding in all_holdings:
         token_details=contract.local_call("Get_Token", [holding[1]])

@@ -212,8 +212,31 @@ def close_position():
     else:
         private_key=args["private_key"]
     account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
     try:
         contract.call_func("Close_Order", [id, token], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_response(False)
+
+@app.get("/create_token")
+def create_token():
+    args=dict(request.args)
+    private_key=""
+    id=args["id"]
+    token=args["token"]
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    keys="name,icon_url,description,telegram,x,website,ticker".split(",")
+    to_send=[]
+    for x in keys:
+        to_send.append(args[x])
+    try:
+        contract.call_func("Close_Order", [to_send], 0, signer, private_key)
         return make_response(True)
     except:
         return make_response(False)

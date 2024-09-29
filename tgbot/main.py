@@ -28,17 +28,17 @@ def send_main_menu(client, message):
          InlineKeyboardButton("Positions", callback_data="positions")],
         [InlineKeyboardButton("Holdings", callback_data="holdings"),
          InlineKeyboardButton("Stake", callback_data="stake")],
-        [InlineKeyboardButton("Swap", callback_data="swap"),
-         InlineKeyboardButton("Recv", callback_data="showkey")],
         [InlineKeyboardButton("Send", callback_data="send"),
+         InlineKeyboardButton("Recieve", callback_data="showkey")],
+        [InlineKeyboardButton("Sell", callback_data="sell"),
          InlineKeyboardButton("Buy", callback_data="buy")],
         [InlineKeyboardButton("Long", callback_data="long"),
          InlineKeyboardButton("Short", callback_data="short")],
-        [InlineKeyboardButton("Sell", callback_data="sell")] 
+        [InlineKeyboardButton("Swap", callback_data="swap")] 
 
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    message.reply_text("Choose an action:", reply_markup=reply_markup)
+    message.reply_text("Please select an action to proceed with. Every option is accompanied by a brief description of it when clicked.\n\nContact @aludayalu for support.", reply_markup=reply_markup)
 
 @app.on_message(filters.command("start"))
 def start(client, message):
@@ -52,7 +52,7 @@ def start(client, message):
         keyboard = [[InlineKeyboardButton("Register", url=data.get("url"))]]    
 
         reply_markup = InlineKeyboardMarkup(keyboard)
-        message.reply_text("You are not registered. Please register by clicking the button below:", reply_markup=reply_markup)
+        message.reply_text("Welcome to the Plutonium Bot.\n\nExperience real market dynamics with leverage and advanced order types, including longs, shorts, and futures and options trading for each token on the platform. We offer starting liquidity and are 100% rug-safe, ensuring a secure trading environment. Our platform features quick trading capabilities, real-time candlestick charts, and extensive statistics.\n\n You are not registered. Please register by clicking the button below:", reply_markup=reply_markup)
 
 @app.on_callback_query(filters.regex("balance"))
 def balance(client, callback_query):
@@ -61,7 +61,7 @@ def balance(client, callback_query):
 
     if balance_data:
         balance = balance_data.get("balance", "No balance found")
-        callback_query.message.reply_text(f"Your balance: {balance} ETH")
+        callback_query.message.reply_text(f"This command shows your current balance.\n\nYour current balance is: `{balance}` GAS")
     else:
         callback_query.message.reply_text("Failed to fetch balance. Please try again.")
         
@@ -78,40 +78,16 @@ def positions(client, callback_query):
         holdings_data = response.json()
         if holdings_data:
             keyboard = [
-                [InlineKeyboardButton(f"Show Positions for {holding['token']['name']}", callback_data=f"show_positions:{holding['token']['ticker']}")]
+                [InlineKeyboardButton(f"Show Positions for {holding['token']['name']}", callback_data=f"show_positions:{holding['token']['name']}")]
                 for holding in holdings_data
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 
-            callback_query.message.edit_text("Select a token to view positions:", reply_markup=reply_markup)
+            callback_query.message.reply_text("This command shows all your current open positions.\nPlease a select a position from the menu below", reply_markup=reply_markup)
         else:
-            callback_query.message.edit_text("No holdings found.")
+            callback_query.message.reply_text("No positions found.")
     else:
-        callback_query.message.edit_text("Failed to fetch holdings. Please try again.")
-
-@app.on_callback_query(filters.regex(r"show_positions:(\w+)"))
-def show_positions(client, callback_query):
-    user_id = callback_query.from_user.id
-    token = callback_query.data.split(":")[1]  
-    callback_query.answer()
-
-    api_url = f"http://10.43.0.96:7777/positions?telegram_id={user_id}&token={token}"
-    response = requests.get(api_url)
-
-    if response.status_code == 200:
-        positions_data = response.json()
-        if positions_data:
-            keyboard = [
-                [InlineKeyboardButton(f"Close Position {pos['id']}", callback_data=f"close_position:{pos['id']},{pos['token']}")]
-                for pos in positions_data
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            callback_query.message.edit_text(f"Select a position to close for {token}:", reply_markup=reply_markup)
-        else:
-            callback_query.message.edit_text(f"No positions found for {token}.")
-    else:
-        callback_query.message.edit_text(f"Failed to fetch positions for {token}. Please try again.")
+        callback_query.message.reply_text("Failed to fetch holdings. Please try again.")
 
 @app.on_callback_query(filters.regex(r"show_positions:(\w+)"))
 def show_positions(client, callback_query):
@@ -129,11 +105,11 @@ def show_positions(client, callback_query):
                 for pos in positions_data
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
-            callback_query.message.edit_text(f"Select a position to close for {token}:", reply_markup=reply_markup)  
+            callback_query.message.reply_text(f"Select a position to close for {token}:", reply_markup=reply_markup)  
         else:
-            callback_query.message.edit_text(f"No positions found for {token}.")
+            callback_query.message.reply_text(f"No positions found for {token}.")
     else:
-        callback_query.message.edit_text(f"Failed to fetch positions for {token}. Please try again.")
+        callback_query.message.reply_text(f"Failed to fetch positions for {token}. Please try again.")
 
 
 @app.on_callback_query(filters.regex(r"close_position:(\w+),(\w+)"))
@@ -157,7 +133,7 @@ def close_position(client, callback_query):
 @app.on_callback_query(filters.regex("short"))
 def short(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the amount, leverage, and token in the format: &lt;amount&gt;, &lt;leverage&gt;, &lt;token&gt;.")
+    callback_query.message.reply_text("This command allows you to short a specific token.\n\nPlease enter the amount, leverage, and token in the format: &lt;amount&gt;, &lt;leverage&gt;, &lt;token&gt;.")
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
         callbacks[user_id](client, message)
@@ -178,7 +154,7 @@ def short(client, callback_query):
 @app.on_callback_query(filters.regex("long"))
 def long_order(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the amount, token, and leverage in the format: &lt;amount&gt;, &lt;leverage&gt;, &lt;token&gt;.")
+    callback_query.message.reply_text("This command allows you to long a specific token.\n\nPlease enter the amount, token, and leverage in the format: &lt;amount&gt;, &lt;leverage&gt;, &lt;token&gt;.")
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
         callbacks[user_id](client, message)
@@ -217,10 +193,10 @@ def holdings(client, callback_query):
         holdings_list = data
         if holdings_list:
             holdings_message = "\n".join([
-                f"{holding['token']['name']} - {holding['token']['hash']}\n{holding['token']['name']} - {holding['amount']} {holding['token']['ticker']}"
+                f"{holding['token']['name']} - `{holding['token']['hash']}`\n{holding['token']['name']} - {holding['amount']} {holding['token']['name']}"
                 for holding in holdings_list
             ])
-            callback_query.message.reply_text(f"Your holdings:\n{holdings_message}")
+            callback_query.message.reply_text(f"This commands lists all the tokens you currently own.\n\nPlease find the list below:\n{holdings_message}")
         else:
             callback_query.message.reply_text("No holdings found.")
     else:
@@ -229,7 +205,7 @@ def holdings(client, callback_query):
 @app.on_callback_query(filters.regex("stake"))
 def stake(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the amount and token address in the format: &lt;amount&gt;, &lt;token_addr&gt;.")
+    callback_query.message.reply_text("This command allows you to stake a specific token.\n\nPlease enter the amount and token address of said token in the format: &lt;amount&gt;, &lt;token_addr&gt;.")
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
         callbacks[user_id](client, message)
@@ -252,7 +228,7 @@ def stake(client, callback_query):
 @app.on_callback_query(filters.regex("swap"))  
 def swap(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the two token addresses and the swap amount in the format: &lt;token_addr1&gt;, &lt;token_addr2&gt;, &lt;swap_amount&gt;.")
+    callback_query.message.reply_text("This command allows you to swap between two tokens.\n\nPlease enter the two token addresses and the swap amount in the format: &lt;token_addr1&gt;, &lt;token_addr2&gt;, &lt;swap_amount&gt;.")
 
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
@@ -286,7 +262,7 @@ def showkey(client, callback_query):
 @app.on_callback_query(filters.regex("send"))  
 def send(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the recipient address, amount, and token hash in the format: &lt;addr&gt;, &lt;send_amount&gt;, &lt;token_hash&gt;.")
+    callback_query.message.reply_text("This allows you to send an amount of tokens to a specific address.\n\nPlease enter the recipient address, amount, and token hash in the format: &lt;addr&gt;, &lt;send_amount&gt;, &lt;token_hash&gt;.")
 
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
@@ -309,7 +285,7 @@ def send(client, callback_query):
 @app.on_callback_query(filters.regex("buy"))  
 def buy(client, callback_query):
     user_id = callback_query.from_user.id
-    callback_query.message.reply_text("Please enter the amount, and token hash in the format: &lt;addr&gt;, &lt;send_amount&gt;, &lt;token_hash&gt;.")
+    callback_query.message.reply_text("This command allows you to buy a token using its hash.\n\nPlease enter the amount, and token hash in the format: &lt;addr&gt;, &lt;send_amount&gt;, &lt;token_hash&gt;.")
 
     @app.on_message(filters.private)
     def execute_latest_callback(client, message):
@@ -339,11 +315,11 @@ def sell(client, callback_query):
     if response.status_code == 200:
         holdings = response.json()  
         buttons = [
-            f"{token['token']['name']} ({token['token']['ticker']}): {token['amount']} available" for token in holdings
+            f"{token['token']['name']} ({token['token']['name']}): {token['amount']} available" for token in holdings
         ]
         
         callback_query.message.reply_text(
-            "Select a token to sell by entering the amount and token hash in the format: &lt;amount&gt;, &lt;token_hash&gt;.\nAvailable tokens:\n" + "\n".join(buttons)
+            "This command allows you to sell your currently held tokens.\n\nSelect a token to sell by entering the amount and token hash in the format: &lt;amount&gt;, &lt;token_hash&gt;.\nAvailable tokens:\n" + "\n".join(buttons)
         )
         
         @app.on_message(filters.private)
@@ -378,7 +354,7 @@ def sell(client, callback_query):
                         else:
                             callback_query.message.reply_text("Failed to sell tokens. Please try again.")
                     else:
-                        callback_query.message.reply_text(f"Token with ticker {token_hash.strip()} not found.")
+                        callback_query.message.reply_text(f"Token with hash {token_hash.strip()} not found.")
                 else:
                     callback_query.message.reply_text("Failed to fetch your holdings. Please try again.")
             except ValueError:

@@ -8,7 +8,7 @@ threading.Thread(target=event_listener).start()
 
 print("Balance:", contract.get_balance("0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199"))
 
-contract.call_func("Create_Token", [["saut lagani hai", "https://i1.sndcdn.com/artworks-000237541959-i52bbu-t500x500.jpg", "bolna aunty au kya? Ghanti mein bajau kya?", "-", "-", "x.com", "BOLNA"]])
+contract.call_func("Create_Token", [["despacito", "https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTEQccsozzf9tWxBH16l1ycmb7uHGa-_RPpReT_9cUft3nkWgrag", "If you’ve been around since at least 2017, chances are you’ve heard “Despacito,” the smash bilingual single with Luis Fonsi and Daddy Yankee that topped the Billboard Hot 100 chart for 16 straight weeks, and whose sexy music video remains the most watched ever by a musical artist on YouTube. (The hit also later spawned a remix with Justin Bieber.)", "-", "-", "x.com", "LOUIS"]])
 
 print(len(contract.local_call("Get_All_Tokens")))
 

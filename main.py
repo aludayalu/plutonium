@@ -231,9 +231,10 @@ def holdings():
     user_holdings=[]
     for holding in all_holdings:
         token_details=contract.local_call("Get_Token", [holding[1]])
+        raw=token_details
         hash=token_details[1]
         token_details=token_details[2]
-        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6], "hash":hash}
+        token_details={"name":token_details[0], "icon_url":token_details[1], "description":token_details[3], "ticker":token_details[6], "hash":hash, "liquidity":raw[4][1], "tokens":raw[4][0]}
         user_holdings.append({"token":token_details, "amount":int(holding[2])})
     return make_response(user_holdings)
 
@@ -266,6 +267,25 @@ def get_token_historical_data():
         times[timeslot]["low"]=lowest
         candles.append(times[timeslot])
     return make_response(candles)
+
+@app.get("/swap_tokens")
+def swap_tokens():
+    args=dict(request.args)
+    private_key=""
+    if "telegram_id" in args:
+        private_key=telegram_accounts.get(args["telegram_id"])
+    else:
+        private_key=args["private_key"]
+    account=accounts.get(private_key)
+    signer=contract.w3.eth.account.from_key(private_key)
+    token1=args["token1"]
+    token2=args["token2"]
+    amount=int(float(args["amount"]))
+    try:
+        contract.call_func("Swap_Tokens", [token1, token2, amount], 0, signer, private_key)
+        return make_response(True)
+    except:
+        return make_response(False)
 
 @app.get("/get_token_info")
 def get_token_info():

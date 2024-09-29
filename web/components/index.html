@@ -6,66 +6,24 @@
 </head>
 
 <script>
-    var order_type = Signal("order_type", 0)
-    var orders_bottom_history_type = Signal("orders_bottom_history_type", 0)
-    var currentTicker = Signal("currentTicker", "$ABC")
-    var currentCoinIcon = Signal("currentCoinIcon", "https://pump.mypinata.cloud/ipfs/QmVkBRsS1pzGvki4Zeq2buxuNGZte2BXTjeLBxdVeCvr33")
-    var currentCoinName = Signal("currentCoinName", "Moodeng Maga")
-    var currentCoinDesc = Signal("currentCoinDesc", "Moodeng now joins Maga. The trendy hippo is now joining the election trend.")
-    var currentCoinX = Signal("currentCoinX", "https://x.com/lumatozer_chain")
-    var currentCoinTG = Signal("currentCoinTG", "https://t.me/atharv_varshney")
-    var currentCoinWebsite = Signal("currentCoinWebsite", "https://lumatozer.com")
-    var amountInpVal = Signal("amountInpVal", 0)
-    var ethBalance = Signal("ethBalance", 0.65)
-    var tickerBalance = Signal("tickerBalance", 500)
-
-    DerivedFrom("Buy_order_color", () => {
-        if (order_type.Value() == 0) {
-            return "bg-[#0A84FF]/70"
-        } else {
-            return ""
-        }
-    }, ["order_type"])
-    DerivedFrom("Sell_order_color", () => {
-        if (order_type.Value() == 1) {
-            return "bg-[#ff0a47]/70"
-        } else {
-            return ""
-        }
-    }, ["order_type"])
-    DerivedFrom("Long_order_color", () => {
-        if (order_type.Value() == 2) {
-            return "bg-[#0A84FF]/70"
-        } else {
-            return ""
-        }
-    }, ["order_type"])
-    DerivedFrom("Short_order_color", () => {
-        if (order_type.Value() == 3) {
-            return "bg-[#ff0a47]/70"
-        } else {
-            return ""
-        }
-    }, ["order_type"])
-
-
-    DerivedFrom("open_order_color", () => {
-        if (orders_bottom_history_type.Value() == 0) {
-            return "bg-[#0A84FF]/70"
-        } else {
-            return ""
-        }
-    }, ["orders_bottom_history_type"])
-    DerivedFrom("closed_order_color", () => {
-        if (orders_bottom_history_type.Value() == 1) {
-            return "bg-[#0A84FF]/70"
-        } else {
-            return ""
-        }
-    }, ["orders_bottom_history_type"])
+    var tokens = Signal("tokens", [])
+    function Update_Tokens() {
+        var search="";
+        try {
+            search=encodeURIComponent(document.getElementById("search").value)
+        } catch {}
+        fetch("http://10.43.0.96:7777/tokens_web?search="+search).then(async (x)=>{
+            var data=await x.json();
+            console.log(data)
+            tokens.setValue(data);
+        })
+    }
+    Update_Tokens()
+    setInterval(Update_Tokens, 10000)
 </script>
 
-<body data-theme="forest">
+<body data-theme="forest" class="max-h-screen">
+
     {navbar}
     <div class="w-full h-full pl-[66px] pt-[10px]">
 
@@ -75,171 +33,57 @@
                     <circle cx="8.3" cy="8.3" r="6.8" stroke="#8c8888" stroke-width="1.13333"></circle>
                     <path d="M17.8493 18.6507C18.0706 18.872 18.4294 18.872 18.6507 18.6507C18.872 18.4294 18.872 18.0706 18.6507 17.8493L17.8493 18.6507ZM13.6507 12.8493L13.25 12.4486L12.4486 13.25L12.8493 13.6507L13.6507 12.8493ZM18.6507 17.8493L13.6507 12.8493L12.8493 13.6507L17.8493 18.6507L18.6507 17.8493Z" fill="#8c8888"></path>
                 </svg>                
-                <input type="text" placeholder="Search" class="w-full outline-none placeholder:text-white/50 text-sm"></input>
+                <input type="text" placeholder="Search" id="search" class="w-full outline-none placeholder:text-white/50 text-sm" oninput="Update_Tokens()"></input>
             </div>
 
             <button class="border border-[#0A84FF] bg-[#0A84FF]/20 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white">@AtharvVarshney7</button>
         </div>
 
-        <div>
-            <div class="flex h-[calc(100vh-64px)]">
-                <div class="flex flex-col flex-1">
-                    <div class="pl-5 pb-3 pr-3 border border-white/10">
-                        {chart}
-                    </div>
-                    <div class="flex flex-col">
-                        <div class="flex p-3 bg-white/[0.03] gap-1">
-                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {open_order_color}" onclick="orders_bottom_history_type.setValue(0)">Open Positions</div>
-                            <div class="cursor-pointer hover:opacity-[0.7] rounded flex justify-center items-center py-1 text-sm text-white w-[150px] {closed_order_color}" onclick="orders_bottom_history_type.setValue(1)">Closed Orders</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex flex-col w-[350px]">
-                    <div class="flex flex-col border border-white/10 gap-4 pb-5">
-                        <div class="flex p-3 bg-white/[0.03] gap-1">
-                            <div class="cursor-pointer hover:opacity-[0.7] flex-1 rounded flex justify-center items-center py-1 text-white {Buy_order_color}" onclick="order_type.setValue(0)">Buy</div>
-                            <div class="cursor-pointer hover:opacity-[0.7] flex-1 rounded flex justify-center items-center py-1 text-white {Sell_order_color}" onclick="order_type.setValue(1)">Sell</div>
-                            <div class="cursor-pointer hover:opacity-[0.7] flex-1 rounded flex justify-center items-center py-1 text-white {Long_order_color}" onclick="order_type.setValue(2)">Long</div>
-                            <div class="cursor-pointer hover:opacity-[0.7] flex-1 rounded flex justify-center items-center py-1 text-white {Short_order_color}" onclick="order_type.setValue(3)">Short</div>
-                        </div>
+        <for i and element in tokens class="w-full max-h-[calc(100vh-64px)] grid grid-cols-3 gap-10 pt-10">
+            <div class="mx-2 p-4 bg-white/[0.03] rounded-lg border border-white/10"> 
 
-                        <div class="flex gap-3 items-center justify-start px-4">
-                            <svg class="w-[24px] h-[24px]" viewBox="0 0 22 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M13.25 2H8.75C5.56802 2 3.97703 2 2.98851 3.00421C2 4.00841 2 5.62465 2 8.85714V11.1429C2 14.3753 2 15.9916 2.98851 16.9958C3.97703 18 5.56802 18 8.75 18H13.25C16.432 18 18.023 18 19.0115 16.9958C20 15.9916 20 14.3753 20 11.1429V8.85714C20 5.62465 20 4.00841 19.0115 3.00421C18.023 2 16.432 2 13.25 2Z" stroke="rgba(255, 255, 255, 0.7)" stroke-width="3"></path>
-                                <path d="M6 7H9" stroke="rgba(255, 255, 255, 0.7)" stroke-width="2.25" stroke-linecap="round"></path>
-                                <path d="M18 14H16C15.0572 14 14.5858 14 14.2929 13.7071C14 13.4142 14 12.9428 14 12C14 11.0572 14 10.5858 14.2929 10.2929C14.5858 10 15.0572 10 16 10H18C18.9428 10 19.4142 10 19.7071 10.2929C20 10.5858 20 11.0572 20 12C20 12.9428 20 13.4142 19.7071 13.7071C19.4142 14 18.9428 14 18 14Z" stroke="rgba(255, 255, 255, 0.7)" stroke-width="2.25"></path>
-                            </svg>
-                            <p class="text-xl text-white">Balance:</p>
-                            <div>
-                                <if "order_type.Value()==0" dep:order_type>
-                                    <p class="text-xl font-medium">{ethBalance} ETH</p>
-                                </if>
-                                <if "order_type.Value()==1" dep:order_type>
-                                    <p class="text-xl font-medium">{tickerBalance} {currentTicker}</p>
-                                </if>
+                <div class="flex gap-6">    
+                    <img src="{element[2][1]}" onerror="this.src = 'https://api.dicebear.com/9.x/initials/svg?seed={element[2][0]}'" class="w-[75px] h-[75px] rounded-full object-cover"></img> 
+                    
+                    <div class="flex flex-col gap-2 w-full">
+                        <div class="flex justify-between w-full mt-2">
+                            <div class="flex gap-2 w-full">
+                                <script>document.currentScript.nextElementSibling.textContent = element[2][0]</script> 
+                                <p class="text-base capitalize text-white h-min"></p>
+                                <script>document.currentScript.nextElementSibling.textContent = "$" + element[2][6]</script> 
+                                <p class="text-xs uppercase text-white/40 h-min leading-[1.5rem]"></p>
+                            </div>
+
+                            <div class="relative">
+                                <p class="text-[10px] text-white/30 absolute top-[-11px] left-[15%]">Market Cap</p>
+                                
+                                <script>document.currentScript.nextElementSibling.textContent = (element[4][1]/(10**18)).toFixed(3)+"ETH"</script> 
+                                <p class="text-lg uppercase text-[#0A84FF]"></p>
                             </div>
                         </div>
+                        
+                        <script>document.currentScript.nextElementSibling.textContent = element[2][2]</script> 
+                        <p class="text-sm text-white/50"></p>
 
-                        <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
-                            <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">AMOUNT</p>
-                            <input id="amountInp" type="number" class="outline-none border-none pl-2 pr-14 w-full" placeholder="0"></input>
+                        <div class="flex justify-between w-full mt-2">
                             <div>
-                                <if "order_type.Value()==0" dep:order_type>
-                                    <p class="absolute right-3 top-1.5">ETH</p>
-                                </if>
-                                <if "order_type.Value()==1" dep:order_type>
-                                    <p class="absolute right-3 top-1.5">{currentTicker}</p>
-                                </if>
-                                <if "order_type.Value()==2" dep:order_type>
-                                    <p class="absolute right-3 top-1.5">ETH</p>
-                                </if>
-                                <if "order_type.Value()==3" dep:order_type>
-                                    <p class="absolute right-3 top-1.5">{currentTicker}</p>
-                                </if>
+                                <script>document.currentScript.nextElementSibling.href = element[2][4]</script> 
+                                <a class="mx-1.5 ml-0 hover:underline cursor-pointer text-sm" target="_blank">X</a>
+                                |
+                                <script>document.currentScript.nextElementSibling.href = element[2][3]</script> 
+                                <a class="mx-1.5 hover:underline cursor-pointer text-sm" target="_blank">Telegram</a>
+                                |
+                                <script>document.currentScript.nextElementSibling.href = element[2][5]</script> 
+                                <a class="mx-1.5 mr-0 hover:underline cursor-pointer text-sm" target="_blank">Website</a>
                             </div>
+                            
+                            <a href="/token?token={element[1]}">
+                                <button class="h-full border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg text-xs text-center px-5 text-white w-fit hover:opacity-[0.85] transition">Open</button>
+                            </a>
                         </div>
-
-                        <div>
-                            <if "order_type.Value()==0" dep:order_type>
-                                <div class="flex gap-2 mx-4">
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.001; amountInpVal.setValue(0.001)">
-                                        0.001 ETH
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.01; amountInpVal.setValue(0.01)">
-                                        0.01 ETH
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.005; amountInpVal.setValue(0.005)">
-                                        0.05 ETH
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=0.1; amountInpVal.setValue(0.1)">
-                                        0.1 ETH
-                                    </div>
-                                </div>
-                            </if>
-                            <if "order_type.Value()==1" dep:order_type>
-                                <div class="flex gap-2 mx-4">
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=tickerBalance.Value()*0.25; amountInpVal.setValue(tickerBalance.Value()*0.25)">
-                                        25%
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=tickerBalance.Value()*0.5; amountInpVal.setValue(tickerBalance.Value()*0.5)">
-                                        50%
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=tickerBalance.Value()*0.75; amountInpVal.setValue(tickerBalance.Value()*0.75)">
-                                        75%
-                                    </div>
-                                    <div class="flex-1 py-2 text-white/75 rounded-lg flex justify-center items-center text-xs border border-[#0A84FF]/60 hover:bg-[#0A84FF]/20 bg-[#0A84FF]/10 transition cursor-pointer" onclick="document.querySelector('#amountInp').value=tickerBalance.Value(); amountInpVal.setValue(tickerBalance.Value())">
-                                        100%
-                                    </div>
-                                </div>
-                            </if>
-                        </div>
-
-                        <div>
-                            <if "order_type.Value()==0" dep:order_type>
-                                <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Buy {currentTicker}</button>
-                                </div>
-                            </if>
-                            <if "order_type.Value()==1" dep:order_type>
-                                <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Sell {currentTicker}</button>
-                                </div>
-                            </if>
-                            <if "order_type.Value()==2" dep:order_type>
-                                <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#0A84FF] bg-[#0A84FF]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Long {currentTicker}</button>
-                                </div>
-                            </if>
-                            <if "order_type.Value()==3" dep:order_type>
-                                <div class="flex mx-4 mt-6 box-border">
-                                    <button class="border border-[#ff0a47] bg-[#ff0a47]/30 rounded-lg h-[34px] text-center w-[150px] truncate  px-2 text-medium text-white flex-1 font-semibold">Short {currentTicker}</button>
-                                </div>
-                            </if>
-                        </div>
-
-                        <div class="px-4">
-                            <if "order_type.Value()==0" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Buying {amountInpVal} {currentTicker} for 500 ETH</p>
-                            </if>
-                            <if "order_type.Value()==1" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Selling {amountInpVal} {currentTicker} for 500 ETH</p>
-                            </if>
-                            <if "order_type.Value()==2" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Longing {amountInpVal} {currentTicker} at 250 ETH</p>
-                            </if>
-                            <if "order_type.Value()==3" dep:order_type>
-                                <p class="text-sm text-white/50 text-right">Shorting {amountInpVal} {currentTicker} at 250 ETH</p>
-                            </if>
-                        </div>
-
-                    </div>
-
-                    <div class="flex flex-col items-center border border-white/10 gap-3 py-8 px-4 flex-1">
-                        <img src="{currentCoinIcon}" class="w-[75px] h-[75px] rounded-full object-cover"></img>
-                        <p class="text-lg text-white">{currentCoinName}</p>
-                        <div>
-                            <a class="mx-1.5 hover:underline cursor-pointer" href="{currentCoinX}" target="_blank">X</a>
-                            |
-                            <a class="mx-1.5 hover:underline cursor-pointer" href="{currentCoinTG}" target="_blank">Telegram</a>
-                            |
-                            <a class="mx-1.5 hover:underline cursor-pointer" href="{currentCoinWebsite}" target="_blank">Website</a>
-                        </div>
-                        <p class="mt-2 text-sm text-center">{currentCoinDesc}</p>
                     </div>
                 </div>
             </div>
-
-        </div>
+        </for>
     </div>
 </body>
-
-<script>
-    document.getElementById("amountInp").addEventListener("input", (e) => {
-        if(e.target.value){
-            amountInpVal.setValue(e.target.value)
-        }
-        else{
-            amountInpVal.setValue(0)
-        }
-    })
-</script>

@@ -61,7 +61,7 @@ def balance(client, callback_query):
 
     if balance_data:
         balance = balance_data.get("balance", "No balance found")
-        callback_query.message.reply_text(f"This command shows your current balance.\n\nYour current balance is: `{balance}` ETH")
+        callback_query.message.reply_text(f"This command shows your current balance.\n\nYour current balance is: `{balance}` GAS")
     else:
         callback_query.message.reply_text("Failed to fetch balance. Please try again.")
         

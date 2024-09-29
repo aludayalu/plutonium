@@ -28,6 +28,7 @@
     var leverage = Signal("leverage", 1)
     var positions = Signal("positions", [])
     var transactions = Signal("transactions", [])
+    var isCreateTokenModalOpen = Signal("isCreateTokenModalOpen", false)
 
     var refresh_positions = async ()=>{
         var request=await (await fetch("http://10.43.0.96:7777/positions?token="+encodeURIComponent(token_details[1]))).json()
@@ -189,6 +190,15 @@
         await refresh_balances()
         refresh_positions()
     }
+
+    function toggleCreateTokenModal() {
+        if(isCreateTokenModalOpen.Value()){
+            isCreateTokenModalOpen.setValue(false)
+        }
+        else{
+            isCreateTokenModalOpen.setValue(true)
+        }
+    }
 </script>
 
 <body data-theme="forest">
@@ -203,7 +213,7 @@
                     <p class="w-full text-white text-sm">Analyze Charts using AI</p>
                 </div>
                 
-                <div class="flex gap-2 items-center border border-[#0A84FF] bg-[#0A84FF]/30 p-2 px-4 rounded-lg cursor-pointer hover:opacity-[0.85] transition">
+                <div class="flex gap-2 items-center border border-[#0A84FF] bg-[#0A84FF]/30 p-2 px-4 rounded-lg cursor-pointer hover:opacity-[0.85] transition" onclick="toggleCreateTokenModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="#fff" width="25px" height="25px" viewBox="0 0 46.354 46.354">
                     <g>
                         <path d="M43.978,0.542c-0.646-0.57-1.569-0.703-2.35-0.339l-8.29,3.862c-2.01,0.936-3.805,2.278-5.271,3.94l-8.603,9.757    c-5.206-1.243-10.911,0.354-14.699,4.65c-1.433,1.625-2.448,3.476-3.054,5.418c-0.159,0.508-0.047,1.062,0.296,1.468    c0.343,0.407,0.87,0.61,1.397,0.54c4.061-0.538,8.322,0.608,11.636,3.53s4.986,7.006,4.96,11.104    c-0.003,0.531,0.265,1.027,0.711,1.316s1.01,0.331,1.494,0.11c1.851-0.845,3.559-2.083,4.99-3.709    c3.788-4.296,4.657-10.156,2.771-15.167l8.6-9.755c1.467-1.664,2.575-3.614,3.251-5.728l2.79-8.709    C44.872,2.01,44.624,1.112,43.978,0.542z M36.668,14.68c-1.41,1.6-3.85,1.753-5.449,0.343c-1.599-1.41-1.752-3.85-0.343-5.449    c1.411-1.6,3.85-1.753,5.449-0.343C37.926,10.641,38.078,13.081,36.668,14.68z"></path>
@@ -499,6 +509,68 @@
 
         </div>
     </div>
+    
+    <if isCreateTokenModalOpen>
+        <div class="absolute bg-black/50 backdrop-blur z-[1000] w-screen h-screen top-0 left-0 flex justify-center items-center">
+
+            <div class="flex flex-col bg-base-100 border border-white/[0.2] w-[450px] p-5 rounded-xl gap-5 relative">  
+                
+                <p class="text-sm rounded-lg font-semibold px-3 py-2 bg-white/[0.1] absolute top-2 right-2 cursor-pointer z-[10000]" onclick="toggleCreateTokenModal()">Close</p>
+                
+                <div class="flex justify-center items-center gap-3 mb-7 relative">
+                    <img src="logo.svg" class="h-14"></img>
+                    <h1 class="orbitron text-3xl">Plutonium</h1>
+                    <p class="italic text-sm text-[#0A84FF] absolute top-[76%] left-[180px] orbitron">Token Launchpad</p>
+                </div>
+    
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">NAME</p>
+                    <input id="coinNameInp" type="text" class="outline-none border-none pl-2  w-full" placeholder=""></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">TICKER</p>
+                    <input id="coinTickerInp" type="text" class="outline-none border-none pl-2  w-full" placeholder=""></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">ICON</p>
+                    <input id="coinIconInp" type="text" class="outline-none border-none pl-2  w-full" placeholder="https://something.com"></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">DESCRIPTION</p>
+                    <input id="coinDescInp" type="text" class="outline-none border-none pl-2  w-full" placeholder=""></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">TELEGRAM</p>
+                    <input id="coinTGInp" type="text" class="outline-none border-none pl-2  w-full" placeholder="https://t.me/"></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">TWITTER</p>
+                    <input id="coinXInp" type="text" class="outline-none border-none pl-2  w-full" placeholder="https://x.com"></input>
+                    
+                </div>
+
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">WEBSITE</p>
+                    <input id="coinWebsiteInp" type="text" class="outline-none border-none pl-2  w-full" placeholder="https://something.com"></input>
+                    
+                </div>
+    
+                <button class="border border-[#0A84FF] bg-[#0A84FF]/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition" onclick="Create_Token()">Create Token</button>
+                
+            </div>
+        </div>
+    </if>
+
 </body>
 
 <script>

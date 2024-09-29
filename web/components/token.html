@@ -7,8 +7,8 @@
 
 <script>
     const token_details = {tokenDetails}
-    const acc_Bal = {accBal}
-    const token_Bal = {tokenBal}
+    // const acc_Bal = {accBal}
+    // const token_Bal = {tokenBal}
 
     var order_type = Signal("order_type", 0)
     var orders_bottom_history_type = Signal("orders_bottom_history_type", 0)
@@ -20,8 +20,8 @@
     var currentCoinTG = Signal("currentCoinTG", token_details[2][3])
     var currentCoinWebsite = Signal("currentCoinWebsite", token_details[2][5])
     var amountInpVal = Signal("amountInpVal", 0)
-    var ethBalance = Signal("ethBalance", acc_Bal)
-    var tickerBalance = Signal("tickerBalance", token_Bal)
+    var ethBalance = Signal("ethBalance", 0)
+    var tickerBalance = Signal("tickerBalance", 0)
 
     DerivedFrom("Buy_order_color", () => {
         if (order_type.Value() == 0) {

@@ -1,5 +1,5 @@
 import contract, flask, litedb, json, uuid, threading, time
-from flask import Flask, request
+from flask import Flask, request, Response
 
 app=Flask(__name__)
 accounts=litedb.get_conn("accounts.db")
@@ -250,7 +250,27 @@ def get_token_historical_data():
     if token_prices==None:
         prices.set(token, [])
         token_prices=[]
-    return make_response(token_prices)
+    candles=[]
+    times={}
+    for event in token_prices:
+        event["time"]=(event["time"] // 60) * 60
+        if event["time"] not in times:
+            times[event["time"]]={"time":event["time"], "open":event["token_state"]["liquidity"]/event["token_state"]["total_tokens"], "close":0, "high":0, "close":0, "trades":[]}
+        times[event["time"]]["trades"].append(event)
+    for timeslot in times:
+        highest=0
+        lowest=10**400
+        times[timeslot]["close"]=times[timeslot]["trades"][-1]["token_state"]["liquidity"]/times[timeslot]["trades"][-1]["token_state"]["total_tokens"]
+        for trade in times[timeslot]["trades"]:
+            price=trade["token_state"]["liquidity"]/trade["token_state"]["total_tokens"]
+            if price<lowest:
+                lowest=price
+            if price>highest:
+                highest=price
+        times[timeslot]["high"]=highest
+        times[timeslot]["low"]=lowest
+        candles.append(times[timeslot])
+    return make_response(candles)
 
 @app.get("/get_token_info")
 def get_token_info():
@@ -269,5 +289,28 @@ def tokens_web():
     all_tokens=[x for x in contract.local_call("Get_All_Tokens") if search.lower() in str(x).lower()]
     tokens=sorted(all_tokens, key=lambda x:x[-1], reverse=True)[:100]
     return make_response(tokens)
+
+def event_stream(token_hash):
+    token=token_hash
+    token_prices=prices.get(token)
+    if token_prices==None:
+        prices.set(token, [])
+        token_prices=[]
+    last_length=len(token_prices)
+    while True:
+        time.sleep(1)
+        token_prices=prices.get(token)
+        if len(token_prices)>last_length:
+            for x in token_prices[::-1][:len(token_prices)-last_length][::-1]:
+                x["time"]=(x["time"]//60)*60
+                yield f"data: {json.dumps(x)}\n\n"
+            last_length=len(token_prices)
+
+@app.get("/listen_for_price_updates")
+def listening_for_price_updates():
+    args=dict(request.args)
+    resp=Response(event_stream(args["token"]), content_type="text/event-stream")
+    resp.headers["Access-Control-Allow-Origin"]="*"
+    return resp
 
 app.run(host="0.0.0.0", port=7777)

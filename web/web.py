@@ -80,20 +80,17 @@ def token():
     response=requests.get(main_api_url+"/get_account_info?private_key="+request.cookies["private_key"]).json()
     if "error" in response:
         return redirect("https://t.me/PlutoniumWalletBot")
+    token_hash=request.args["token"]
+    
+    data=json.dumps(requests.get(main_api_url+"/get_token_historical_data?token="+token_hash).json())
     
     responseToken = requests.get(main_api_url+"/get_token_info?token="+request.args["token"]).json()
-    responseAccBal = requests.get(main_api_url+"/balance?token="+request.args["token"]+"&private_key="+response["private_key"]).json()
-    responseHoldings = requests.get(main_api_url+"/holdings?private_key="+response["private_key"]+"&public_key="+response["public_key"]).json()
 
-    accBal = responseAccBal
-    if len(responseHoldings) > 0:
-        tokenBal = [x for x in responseHoldings if x[1] == request.args["token"]][0]
-    else:
-        tokenBal = 0
     tokenDetails = json.dumps(list(responseToken))
 
     navbar = render("navbar", locals()|globals())
     chart = render("chart", locals()|globals())
+
     return render("token", locals()|globals())
 
-app.run(host="0.0.0.0", port=int(sys.argv[1]))
+app.run(host="127.0.0.1", port=int(sys.argv[1]))

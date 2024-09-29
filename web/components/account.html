@@ -28,6 +28,18 @@
         x=await x.json()
         holdings.setValue(x)
     })
+
+    var isSendModalOpen = Signal("isSendModalOpen", false)
+
+    function toggleSendModal() {
+        if(isSendModalOpen.Value()){
+            isSendModalOpen.setValue(false)
+        }
+        else{
+            isSendModalOpen.setValue(true)
+        }
+    }
+
 </script>
 
 <body data-theme="forest" class="max-h-screen">
@@ -55,13 +67,13 @@
                     <img style="height: 80px; border-radius: 50%;" src="https://api.dicebear.com/9.x/initials/svg?seed=0x"></img>
                 </div>
 
-                <div class="w-full flex justify-center items-center h-[80px]">
+                <div class="w-full flex justify-center items-center h-[60px]">
                     <p class="font-semibold text-white text-4xl w-fit">{gas_balance} GAS</p>
                 </div>
 
                 <if "default_value">
                     <div class="flex gap-5">
-                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition">
+                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition" onclick="toggleSendModal()">
                             <svg width="30px" height="30px" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path fill-rule="evenodd" clip-rule="evenodd" d="M8.03202 11.1265L5.3912 10.2463C2.62584 9.32448 1.24316 8.86359 1.24316 8.0166C1.24316 7.1696 2.62584 6.70871 5.3912 5.78693L5.3912 5.78692L15.3954 2.4522C17.3411 1.80361 18.314 1.47931 18.8276 1.99287C19.3412 2.50642 19.0169 3.47931 18.3683 5.4251L15.0335 15.4293C14.1118 18.1946 13.6509 19.5773 12.8039 19.5773C11.9569 19.5773 11.496 18.1946 10.5742 15.4293L9.69392 12.7884L14.81 7.67241C15.2689 7.21349 15.2689 6.46943 14.81 6.01051C14.351 5.55159 13.607 5.55159 13.1481 6.01051L8.03202 11.1265Z" fill="#0A84FF" fill-opacity="0.7"></path>
                             </svg>
@@ -74,8 +86,23 @@
                             </svg>
                             Swap
                         </button>
-                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition">Receive</button>
-                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition">Deposit</button>
+                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition">
+                            <svg width="30px" height="30px" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M19 10.7941H16.291C15.5544 10.7941 15.1861 10.7941 14.9088 10.994C14.6315 11.1939 14.515 11.5433 14.282 12.2421L14.1885 12.5226C13.9556 13.2215 13.8391 13.5709 13.5618 13.7707C13.2845 13.9706 12.9162 13.9706 12.1796 13.9706H7.82043C7.08379 13.9706 6.71546 13.9706 6.43817 13.7707C6.16088 13.5709 6.0444 13.2215 5.81146 12.5226L5.71796 12.2421C5.48501 11.5433 5.36854 11.1939 5.09124 10.994C4.81395 10.7941 4.44563 10.7941 3.70898 10.7941H1" stroke="#0A84FF" stroke-opacity="0.7" stroke-width="1.05882"></path>
+                                <path d="M7.35303 7.61765L10.0001 10.2647M10.0001 10.2647L12.6471 7.61765M10.0001 10.2647L10.0001 2.85295" stroke="#0A84FF" stroke-opacity="0.7" stroke-width="1.05882"></path>
+                                <path d="M4.17647 6.55884L2.3579 7.77122C1.86144 8.10219 1.61321 8.26768 1.4335 8.48632C1.27441 8.67989 1.15505 8.90292 1.08224 9.14266C1 9.41347 1 9.7118 1 10.3085V14.0977C1 15.1651 1 15.6988 1.20773 16.1064C1.39045 16.4651 1.68202 16.7566 2.04063 16.9393C2.44832 17.1471 2.98202 17.1471 4.04941 17.1471H15.9506C17.018 17.1471 17.5517 17.1471 17.9594 16.9393C18.318 16.7566 18.6095 16.4651 18.7923 16.1064C19 15.6988 19 15.1651 19 14.0977V10.3085C19 9.7118 19 9.41347 18.9178 9.14266C18.845 8.90292 18.7256 8.67989 18.5665 8.48632C18.3868 8.26768 18.1386 8.10219 17.6421 7.77122L15.8235 6.55884" stroke="#0A84FF" stroke-opacity="0.7" stroke-width="1.05882" stroke-linecap="round"></path>
+                            </svg>
+                                
+                            Receive
+                        </button>
+                        <button class="border border-white/10 bg-white/[0.03] hover:opacity-[0.8] rounded-lg flex flex-col items-center justify-center gap-1.5 text-center p-2 flex-1 font-semibold transition">
+                            <svg width="30px" height="30px" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9.99993 2L9.4696 1.46967L9.99993 0.93934L10.5303 1.46967L9.99993 2ZM10.7499 12.2857C10.7499 12.6999 10.4141 13.0357 9.99993 13.0357C9.58572 13.0357 9.24993 12.6999 9.24993 12.2857L10.7499 12.2857ZM3.75531 7.18396L9.4696 1.46967L10.5303 2.53033L4.81597 8.24462L3.75531 7.18396ZM10.5303 1.46967L16.2445 7.18395L15.1839 8.24462L9.4696 2.53033L10.5303 1.46967ZM10.7499 2L10.7499 12.2857L9.24993 12.2857L9.24993 2L10.7499 2Z" fill="#0A84FF" fill-opacity="0.7"></path>
+                                <path d="M2 14.5714L2 15.7143C2 16.9767 3.02335 18 4.28571 18L15.7143 18C16.9767 18 18 16.9767 18 15.7143V14.5714" stroke="#0A84FF" fill-opacity="0.7" stroke-width="1.5"></path>
+                            </svg>
+                                
+                            Deposit
+                        </button>
                     </div>
                 </if>
 
@@ -99,4 +126,34 @@
         </div>
 
     </div>
+
+    <if isSendModalOpen>
+        <div class="absolute bg-black/50 backdrop-blur z-[1000] w-screen h-screen top-0 left-0 flex justify-center items-center">
+
+            <div class="flex flex-col bg-base-100 border border-white/[0.2] w-[450px] p-5 rounded-xl gap-5 relative">  
+                
+                <p class="text-sm rounded-lg font-semibold px-3 py-2 bg-white/[0.1] absolute top-2 right-2 cursor-pointer z-[10000]" onclick="toggleSendModal()">Close</p>
+                
+                <div class="flex justify-center items-center gap-3 mb-7 relative">
+                    <img src="logo.svg" class="h-14"></img>
+                    <h1 class="orbitron text-3xl">Plutonium</h1>
+                </div>
+    
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">AMOUNT</p>
+                    <input id="coinNameInp" type="number" class="outline-none border-none pl-2  w-full" placeholder="e.g. 424"></input>
+                    
+                </div>
+    
+                <div class="flex mx-4 rounded-lg border-2 border-white/[0.05] overflow-hidden relative">
+                    <p class="py-2 px-4 bg-white/[0.05] text-sm tracking-wider text-white/[0.6]">TO</p>
+                    <input id="coinNameInp" type="text" class="outline-none border-none pl-2  w-full" placeholder="e.g. 0x4343"></input>
+                    
+                </div>
+    
+                <button class="border border-[#0A84FF] bg-[#0A84FF]/30 hover:opacity-[0.8] rounded-lg h-[34px] text-center px-2 py-1 text-medium text-white flex-1 font-semibold mt-5 transition" onclick="Send_Token()">Send Token</button>
+                
+            </div>
+        </div>
+    </if>
 </body>
